@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Public Instance Page
- * Modern Clean Blue/White Design
+ * Modern Clean Blue/Grey Design
  */
 
 require_once __DIR__ . '/../config.php';
@@ -45,7 +45,7 @@ updateGlobalStats('totalVisits', 1);
         
         body {
             font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, #f0f5ff 0%, #e8f1ff 50%, #f0f5ff 100%);
+            background: #f3f4f6;
             color: #1a2a4a;
             min-height: 100vh;
             display: flex;
@@ -141,6 +141,10 @@ updateGlobalStats('totalVisits', 1);
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
         .btn-start:hover {
@@ -153,10 +157,15 @@ updateGlobalStats('totalVisits', 1);
             cursor: not-allowed;
         }
         
+        .create-site-wrapper {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
         .btn-create {
             padding: 12px 40px;
             background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: 10px;
             color: #3b82f6;
             font-size: 14px;
@@ -165,12 +174,13 @@ updateGlobalStats('totalVisits', 1);
             text-decoration: none;
             transition: all 0.3s ease;
             display: inline-block;
-            margin-bottom: 24px;
+            gap: 6px;
         }
         
         .btn-create:hover {
             background: rgba(59, 130, 246, 0.15);
             border-color: rgba(59, 130, 246, 0.4);
+            transform: translateY(-2px);
         }
         
         .process-box {
@@ -343,7 +353,7 @@ updateGlobalStats('totalVisits', 1);
             </div>
 
             <!-- Create Site Button -->
-            <div style="text-align: center; margin-bottom: 24px;">
+            <div class="create-site-wrapper">
                 <a href="/generator/" class="btn-create">
                     ✨ Create Your Own Site
                 </a>
