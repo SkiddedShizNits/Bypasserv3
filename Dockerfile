@@ -1,9 +1,12 @@
-FROM php:8.1-apache
+FROM php:8.1-cli
 
-COPY . /var/www/html/
+WORKDIR /app
 
-RUN mkdir -p /var/www/html/data/tokens /var/www/html/data/instances && \
-    chmod -R 777 /var/www/html/data && \
-    a2enmod rewrite
+COPY . .
 
-EXPOSE 80
+RUN mkdir -p data/tokens data/instances data/rate_limits && \
+    chmod -R 777 data
+
+EXPOSE 8080
+
+CMD ["php", "-S", "0.0.0.0:8080", "-t", "."]
