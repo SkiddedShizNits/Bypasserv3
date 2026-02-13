@@ -13,7 +13,7 @@ session_start();
 $token = $_GET['token'] ?? $_SESSION['token'] ?? null;
 
 if (!$token) {
-    header('Location: /dashboard/login.php');
+    header('Location: sign-in.php');
     exit;
 }
 
@@ -22,7 +22,7 @@ $tokenData = verifyToken($token);
 
 if (!$tokenData) {
     session_destroy();
-    header('Location: /dashboard/login.php?error=invalid_token');
+    header('Location: sign-in.php?error=invalid_token');
     exit;
 }
 
