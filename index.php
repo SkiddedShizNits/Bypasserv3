@@ -1,7 +1,7 @@
 <?php
 /**
- * Bypasserv3 - Homepage (No Dashboard)
- * Root index file
+ * Bypasserv3 - Homepage
+ * Modern Clean Blue/White Design
  */
 
 require_once __DIR__ . '/config.php';
@@ -29,44 +29,63 @@ $leaderboard = getLeaderboard(5);
         
         body {
             font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0a0e27 100%);
-            background-attachment: fixed;
-            color: #f8fafc;
+            background: linear-gradient(135deg, #f0f5ff 0%, #e8f1ff 50%, #f0f5ff 100%);
+            color: #1a2a4a;
             min-height: 100vh;
+        }
+        
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.1);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Space Grotesk', sans-serif;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 60px 20px;
+            padding: 80px 20px;
         }
         
-        .header {
+        .hero {
             text-align: center;
-            margin-bottom: 60px;
+            margin-bottom: 80px;
         }
         
-        .header-title {
-            font-size: 56px;
+        .hero-title {
+            font-size: 64px;
             font-weight: 700;
-            margin-bottom: 12px;
-            background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-size: 200% auto;
-            animation: gradientShift 3s ease infinite;
+            font-family: 'Space Grotesk', sans-serif;
         }
         
-        .header-subtitle {
+        .hero-subtitle {
             font-size: 20px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 30px;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% center; }
-            50% { background-position: 100% center; }
-            100% { background-position: 0% center; }
+            color: #64748b;
+            margin-bottom: 32px;
         }
         
         .cta-button {
@@ -81,144 +100,191 @@ $leaderboard = getLeaderboard(5);
             cursor: pointer;
             text-decoration: none;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
         }
         
         .cta-button:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4);
-        }
-        
-        .glass-box {
-            backdrop-filter: blur(20px) saturate(200%);
-            background-color: rgba(17, 25, 40, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.125);
-            border-radius: 20px;
-            padding: 40px;
-            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
         }
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 80px;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.1);
         }
         
         .stat-card {
             text-align: center;
+            padding: 20px;
         }
         
         .stat-number {
-            font-size: 40px;
+            font-size: 48px;
             font-weight: 700;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #3b82f6;
             margin-bottom: 8px;
+            font-family: 'Space Grotesk', sans-serif;
         }
         
         .stat-label {
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.6);
+            color: #64748b;
+            font-weight: 500;
         }
         
         .features {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 80px;
         }
         
         .feature-card {
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 15px;
-            padding: 24px;
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
             text-align: center;
+            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.08);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.3);
         }
         
         .feature-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
+            font-size: 40px;
+            margin-bottom: 16px;
         }
         
         .feature-title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            color: #1a2a4a;
         }
         
         .feature-desc {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.6;
         }
         
-        .leaderboard {
-            margin-top: 40px;
+        .leaderboard-section {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.1);
+            margin-bottom: 80px;
         }
         
-        .leaderboard h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            color: #1a2a4a;
             text-align: center;
         }
         
         .leaderboard-item {
             display: flex;
             justify-content: space-between;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(59, 130, 246, 0.1);
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .leaderboard-item:hover {
+            background: rgba(59, 130, 246, 0.05);
             border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin: 0 -16px;
+            padding: 16px;
+        }
+        
+        .leaderboard-item:last-child {
+            border-bottom: none;
         }
         
         .rank-badge {
             font-weight: 700;
             color: #3b82f6;
-            min-width: 30px;
+            min-width: 40px;
+            font-size: 18px;
+        }
+        
+        .rank-name {
+            color: #1a2a4a;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .rank-cookies {
+            color: #10b981;
+            font-weight: 600;
+            font-size: 16px;
         }
         
         .footer {
             text-align: center;
-            margin-top: 60px;
-            padding-top: 40px;
-            border-top: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 40px 20px;
+            border-top: 1px solid rgba(59, 130, 246, 0.1);
+            color: #64748b;
+            font-size: 14px;
         }
         
-        .footer p {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 13px;
+        .empty-leaderboard {
+            text-align: center;
+            color: #94a3b8;
+            padding: 40px 20px;
+            font-size: 16px;
         }
     </style>
 </head>
 <body>
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">Bypasserv3</div>
+            <a href="/generator/" class="cta-button">Create Site</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
     <div class="container">
-        <div class="header">
-            <h1 class="header-title">Bypasserv3</h1>
-            <p class="header-subtitle">Roblox Cookie Refresher</p>
+        <!-- Hero -->
+        <div class="hero">
+            <h1 class="hero-title">Roblox Cookie Refresher</h1>
+            <p class="hero-subtitle">Fast • Secure • Efficient</p>
             <a href="/generator/" class="cta-button">⚡ Create Site Now</a>
         </div>
 
-        <div class="glass-box">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number"><?= $stats['totalInstances'] ?? 0 ?></div>
-                    <div class="stat-label">Total Sites</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number"><?= $stats['totalCookies'] ?? 0 ?></div>
-                    <div class="stat-label">Cookies Processed</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number"><?= $stats['totalVisits'] ?? 0 ?></div>
-                    <div class="stat-label">Total Visits</div>
-                </div>
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number"><?= $stats['totalInstances'] ?? 0 ?></div>
+                <div class="stat-label">Sites Created</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><?= $stats['totalCookies'] ?? 0 ?></div>
+                <div class="stat-label">Cookies Processed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><?= $stats['totalVisits'] ?? 0 ?></div>
+                <div class="stat-label">Total Visits</div>
             </div>
         </div>
 
+        <!-- Features -->
         <div class="features">
             <div class="feature-card">
                 <div class="feature-icon">⚡</div>
@@ -232,12 +298,12 @@ $leaderboard = getLeaderboard(5);
             </div>
             <div class="feature-card">
                 <div class="feature-icon">🔔</div>
-                <div class="feature-title">Dual Webhooks</div>
-                <div class="feature-desc">Admin and user webhooks for complete notifications</div>
+                <div class="feature-title">Webhook Notifications</div>
+                <div class="feature-desc">Real-time Discord notifications for all activity</div>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">📊</div>
-                <div class="feature-title">Full Stats</div>
+                <div class="feature-title">Full Account Stats</div>
                 <div class="feature-desc">Get complete account info and balance details</div>
             </div>
             <div class="feature-card">
@@ -247,31 +313,36 @@ $leaderboard = getLeaderboard(5);
             </div>
             <div class="feature-card">
                 <div class="feature-icon">✨</div>
-                <div class="feature-title">No Dashboard</div>
-                <div class="feature-desc">Direct webhook notifications, no complexity</div>
+                <div class="feature-title">No Complexity</div>
+                <div class="feature-desc">Direct webhook notifications, zero dashboard</div>
             </div>
         </div>
 
+        <!-- Leaderboard -->
         <?php if (!empty($leaderboard)): ?>
-        <div class="glass-box leaderboard">
-            <h2>🏆 Top Sites</h2>
+        <div class="leaderboard-section">
+            <h2 class="section-title">🏆 Top Sites</h2>
             <?php foreach ($leaderboard as $index => $site): ?>
             <div class="leaderboard-item">
-                <div>
+                <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
                     <span class="rank-badge">#<?= $index + 1 ?></span>
-                    <span><?= htmlspecialchars($site['directory']) ?></span>
+                    <span class="rank-name"><?= htmlspecialchars($site['directory']) ?></span>
                 </div>
-                <div style="color: #10b981;">
-                    <?= number_format($site['totalCookies']) ?> cookies
-                </div>
+                <span class="rank-cookies"><?= number_format($site['totalCookies']) ?> cookies</span>
             </div>
             <?php endforeach; ?>
         </div>
-        <?php endif; ?>
-
-        <div class="footer">
-            <p>Bypasserv3 © 2024 | Powered by Railway | No Dashboard Required</p>
+        <?php else: ?>
+        <div class="leaderboard-section">
+            <h2 class="section-title">🏆 Top Sites</h2>
+            <div class="empty-leaderboard">No sites created yet. Be the first!</div>
         </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Bypasserv3 © 2024 | Powered by Railway</p>
     </div>
 </body>
 </html>
