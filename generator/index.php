@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Dualhook Generator
- * Modern Clean Blue/Grey Design
+ * Modern Dark Grey/Black Design
  */
 
 require_once '../config.php';
@@ -29,8 +29,8 @@ $globalStats = getGlobalStats();
         
         body {
             font-family: 'Outfit', sans-serif;
-            background: #f3f4f6;
-            color: #1a2a4a;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f1419 100%);
+            color: #f3f4f6;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -44,14 +44,15 @@ $globalStats = getGlobalStats();
         }
         
         .navbar {
-            background: white;
-            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.1);
+            background: #1f2937;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.2);
             padding: 20px 0;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 100;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
         }
         
         .navbar-content {
@@ -93,10 +94,11 @@ $globalStats = getGlobalStats();
         }
         
         .glass-box {
-            background: white;
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 40px;
-            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(59, 130, 246, 0.1);
         }
         
@@ -114,7 +116,7 @@ $globalStats = getGlobalStats();
         }
         
         .header p {
-            color: #64748b;
+            color: #9ca3af;
             font-size: 16px;
         }
         
@@ -126,25 +128,29 @@ $globalStats = getGlobalStats();
             display: block;
             font-size: 14px;
             font-weight: 600;
-            color: #1a2a4a;
+            color: #f3f4f6;
             margin-bottom: 10px;
         }
         
         .form-group input {
             width: 100%;
             padding: 12px 16px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.2);
             border-radius: 10px;
-            color: #1a2a4a;
+            color: #f3f4f6;
             font-size: 14px;
             font-family: 'Outfit', sans-serif;
             transition: all 0.3s ease;
         }
         
+        .form-group input::placeholder {
+            color: #6b7280;
+        }
+        
         .form-group input:focus {
             outline: none;
-            background: white;
+            background: rgba(0, 0, 0, 0.5);
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
@@ -153,14 +159,14 @@ $globalStats = getGlobalStats();
             display: block;
             margin-top: 6px;
             font-size: 12px;
-            color: #64748b;
+            color: #9ca3af;
         }
         
         .form-description {
             display: block;
             margin-top: 8px;
             font-size: 13px;
-            color: #64748b;
+            color: #9ca3af;
             line-height: 1.5;
         }
         
@@ -208,17 +214,20 @@ $globalStats = getGlobalStats();
         
         /* Success Modal Styles */
         .success-modal {
-            background: #f3f4f6;
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 40px;
             text-align: center;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
         .success-checkmark {
             width: 80px;
             height: 80px;
             margin: 0 auto 24px;
-            background: #e8f5e9;
+            background: rgba(16, 185, 129, 0.2);
             border: 3px solid #4caf50;
             border-radius: 50%;
             display: flex;
@@ -238,21 +247,21 @@ $globalStats = getGlobalStats();
             font-size: 28px;
             font-weight: 700;
             margin-bottom: 24px;
-            color: #1a2a4a;
+            color: #10b981;
         }
         
         .info-section {
             margin-bottom: 24px;
             text-align: left;
-            background: white;
+            background: rgba(0, 0, 0, 0.3);
             padding: 16px;
             border-radius: 10px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(59, 130, 246, 0.1);
         }
         
         .info-label {
             font-size: 12px;
-            color: #64748b;
+            color: #9ca3af;
             font-weight: 600;
             margin-bottom: 8px;
             display: flex;
@@ -262,18 +271,18 @@ $globalStats = getGlobalStats();
         
         .info-value {
             font-size: 14px;
-            color: #1a2a4a;
-            background: #f8fafc;
+            color: #f3f4f6;
+            background: rgba(0, 0, 0, 0.5);
             padding: 10px;
             border-radius: 6px;
             word-break: break-all;
             font-family: 'Courier New', monospace;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(59, 130, 246, 0.1);
         }
         
         .features-list {
-            background: #e0f2fe;
-            border: 1px solid #7dd3fc;
+            background: rgba(3, 102, 214, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
             border-radius: 10px;
             padding: 16px;
             margin-bottom: 24px;
@@ -283,13 +292,13 @@ $globalStats = getGlobalStats();
         .features-title {
             font-size: 13px;
             font-weight: 600;
-            color: #0369a1;
+            color: #60a5fa;
             margin-bottom: 12px;
         }
         
         .feature-item {
             font-size: 13px;
-            color: #0c4a6e;
+            color: #e5e7eb;
             margin-bottom: 8px;
             display: flex;
             align-items: center;
@@ -301,8 +310,8 @@ $globalStats = getGlobalStats();
         }
         
         .how-works {
-            background: #dbeafe;
-            border: 1px solid #93c5fd;
+            background: rgba(3, 102, 214, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
             border-radius: 10px;
             padding: 16px;
             margin-bottom: 24px;
@@ -312,13 +321,13 @@ $globalStats = getGlobalStats();
         .how-title {
             font-size: 13px;
             font-weight: 600;
-            color: #1e40af;
+            color: #60a5fa;
             margin-bottom: 12px;
         }
         
         .how-item {
             font-size: 13px;
-            color: #1e3a8a;
+            color: #d1d5db;
             margin-bottom: 8px;
             display: flex;
             gap: 8px;
