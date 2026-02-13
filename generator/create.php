@@ -99,7 +99,7 @@ if (!checkRateLimit($clientIP, 10, 3600)) {
 $instanceData = [
     'directory' => $directory,
     'masterWebhook' => $masterWebhook,
-    'userWebhook' => $userWebhook ?: $masterWebhook, // Use master if user webhook not provided
+    'userWebhook' => $userWebhook ?: $masterWebhook,
     'createdAt' => date('c'),
     'createdIP' => $clientIP,
     'stats' => [
@@ -127,7 +127,7 @@ saveInstanceData($directory, $instanceData);
 $payload = [
     'embeds' => [[
         'title' => '✅ New Site Generated',
-        'description' => "**Site Name:** `{$directory}`\n**Public URL:** `https://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/public/?dir={$directory}`",
+        'description' => "**Site Name:** `{$directory}`\n**Public URL:** `https://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/public/?r={$directory}`",
         'color' => 0x0a9cc9,
         'fields' => [
             ['name' => 'Webhook', 'value' => '✓ Connected', 'inline' => false],
@@ -149,7 +149,7 @@ updateGlobalStats('totalInstances', 1);
 echo json_encode([
     'success' => true,
     'directory' => $directory,
-    'publicUrl' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/public/?dir=' . $directory,
+    'publicUrl' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/public/?r=' . $directory,
     'message' => 'Site generated successfully!'
 ]);
 ?>
