@@ -1,5 +1,4 @@
 # Protect API Directory
-# Allow PHP execution but block direct browsing
 
 # Disable directory listing
 Options -Indexes
