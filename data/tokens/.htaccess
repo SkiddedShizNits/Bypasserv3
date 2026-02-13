@@ -1,12 +1,23 @@
-# Protect Tokens Directory
-# Block ALL external access
+# Protect tokens directory - MAXIMUM SECURITY
 
-# Deny everything
-Order Allow,Deny
-Deny from all
-
-# No directory listing
+# Disable directory listing
 Options -Indexes
 
-# Block PHP execution
+# Disable PHP execution
 php_flag engine off
+
+# Block ALL access
+Order Deny,Allow
+Deny from all
+
+# Block access to all files
+<FilesMatch ".*">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Block access to .htaccess itself
+<Files ".htaccess">
+    Order Allow,Deny
+    Deny from all
+</Files>
