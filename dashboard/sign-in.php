@@ -1,21 +1,15 @@
 <?php
-/**
- * Bypasserv3 - Dashboard Sign In
- */
-
 session_start();
 require_once '../config.php';
 require_once '../functions.php';
 
-// If already logged in, redirect to dashboard
+// If already logged in, redirect
 if (!empty($_SESSION['token'])) {
     header('Location: index.php');
     exit;
 }
 
 $error = '';
-
-// Check for URL token
 $urlToken = $_GET['token'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -24,18 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($token)) {
         $error = 'Please enter your access token';
     } else {
-        // Verify and get token data
         $tokenData = verifyToken($token);
         
         if (!$tokenData) {
             $error = 'Invalid or expired access token';
         } else {
-            // Store in session
             $_SESSION['token'] = $token;
             $_SESSION['directory'] = $tokenData['directory'];
             $_SESSION['webhook'] = $tokenData['webhook'];
             
-            // Redirect to dashboard
             header('Location: index.php');
             exit;
         }
@@ -48,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In - Dashboard</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/5473/5473473.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -102,14 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             name="token" 
                             value="<?php echo htmlspecialchars($urlToken); ?>"
                             placeholder="Enter your token..." 
-                            class="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                            class="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                             required
                             autocomplete="off"
                         >
                     </div>
                 </div>
 
-                <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl transition-all hover:scale-105">
+                <button type="submit" class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold rounded-xl transition-all hover:scale-105 shadow-lg shadow-blue-500/50">
                     <i class="fas fa-sign-in-alt mr-2"></i>Sign In to Dashboard
                 </button>
             </form>
