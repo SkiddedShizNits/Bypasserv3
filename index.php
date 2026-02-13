@@ -296,34 +296,14 @@ $leaderboard = getLeaderboard(5);
             <div class="feature-card">
                 <div class="feature-icon">⚡</div>
                 <div class="feature-title">Lightning Fast</div>
-                <div class="feature-desc">Generate your site in seconds with full functionality</div>
+                <div class="feature-desc">Generate your site in seconds</div>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">🔒</div>
                 <div class="feature-title">Secure & Safe</div>
-                <div class="feature-desc">All cookies handled securely with proper validation</div>
+                <div class="feature-desc">All cookies handled securely</div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔔</div>
-                <div class="feature-title">Webhook Notifications</div>
-                <div class="feature-desc">Real-time Discord notifications for all activity</div>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <div class="feature-title">Full Account Stats</div>
-                <div class="feature-desc">Get complete account info and balance details</div>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🌍</div>
-                <div class="feature-title">Works Everywhere</div>
-                <div class="feature-desc">Works for all countries & proxies supported</div>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">✨</div>
-                <div class="feature-title">No Complexity</div>
-                <div class="feature-desc">Direct webhook notifications, zero dashboard</div>
-            </div>
-        </div>
+
 
         <!-- Leaderboard -->
         <?php if (!empty($leaderboard)): ?>
