@@ -1,37 +1,28 @@
-# Security Protection for Bypasserv3
-# Block malicious files and exploits
+# Bypasserv3 - Main Security Rules
 
-# Enable RewriteEngine
-RewriteEngine On
-
-# Block suspicious files by name
-<FilesMatch "(monarx|c99|r57|wso|shell|backdoor|eval|hack|exploit|malware)">
-    Order Allow,Deny
-    Deny from all
-</FilesMatch>
-
-# Prevent direct access to config files
-<FilesMatch "^(config|functions)\.php$">
-    Order Allow,Deny
-    Deny from all
-</FilesMatch>
-
-# Block common exploit attempts in URLs
-RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC,OR]
-RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
-RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2}) [OR]
-RewriteCond %{QUERY_STRING} (eval|base64_decode|system|exec|passthru)\( [NC,OR]
-RewriteCond %{QUERY_STRING} \.\./\.\. [NC]
-RewriteRule ^(.*)$ - [F,L]
+# Enable URL Rewriting
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # Block access to sensitive files
+    RewriteRule ^config\.php$ - [F,L]
+    RewriteRule ^functions\.php$ - [F,L]
+    RewriteRule ^composer\.(json|lock)$ - [F,L]
+    RewriteRule ^\.env$ - [F,L]
+    RewriteRule ^\.git - [F,L]
+</IfModule>
 
 # Disable directory listing
 Options -Indexes
 
-# Protect .git folder if exists
-RedirectMatch 404 /\.git
+# Protect sensitive files
+<FilesMatch "^\.">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
 
-# Protect composer files
-<FilesMatch "^(composer\.json|composer\.lock|package\.json)$">
+<FilesMatch "(^#.*#|\.(bak|conf|dist|fla|in[ci]|log|psd|sh|sql|sw[op])|~)$">
     Order Allow,Deny
     Deny from all
 </FilesMatch>
@@ -41,4 +32,33 @@ RedirectMatch 404 /\.git
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header unset X-Powered-By
+</IfModule>
+
+# Disable PHP execution in data directory
+<Directory "data">
+    php_flag engine off
+    Options -ExecCGI
+    RemoveHandler .php .phtml .php3 .php4 .php5 .phps
+    RemoveType .php .phtml .php3 .php4 .php5 .phps
+</Directory>
+
+# Custom error pages (optional)
+# ErrorDocument 404 /404.php
+# ErrorDocument 403 /403.php
+# ErrorDocument 500 /500.php
+
+# Prevent access to backup files
+<FilesMatch "\.(bak|backup|old|save|swp)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Block bad bots
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP_USER_AGENT} (libwww-perl|wget|python-requests|curl|PHPCrawl|Java) [NC,OR]
+    RewriteCond %{HTTP_USER_AGENT} (Scrapy|Mechanize|HTTrack|WebCopier|Teleport) [NC]
+    RewriteRule .* - [F,L]
 </IfModule>
