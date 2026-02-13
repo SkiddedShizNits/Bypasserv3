@@ -1,6 +1,6 @@
 <?php
 /**
- * Bypasserv3 - Cookie Check Endpoint
+ * Bypasserv3 - Cookie Check Endpoint - UPDATED
  */
 
 header('Content-Type: application/json');
@@ -37,7 +37,7 @@ if (!validateCookie($cookie)) {
     exit;
 }
 
-// Check if cookie is valid
+// Check if cookie is valid with Roblox
 $headers = ["Cookie: .ROBLOSECURITY=$cookie", "User-Agent: Mozilla/5.0"];
 $ch = curl_init("https://www.roblox.com/my/settings/json");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -45,7 +45,18 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 $response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
+
+if ($httpCode !== 200) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'valid' => false,
+        'error' => 'Invalid or expired cookie'
+    ]);
+    exit;
+}
 
 $data = json_decode($response, true);
 
