@@ -267,7 +267,15 @@ $INSTANCE_NAME = isset($INSTANCE_NAME) ? $INSTANCE_NAME : '';
             </div>
         </div>
 
-        <div class="mt-12 flex items-center gap-2">
+        <!-- Create Dualhook Button -->
+        <div class="mt-8 w-full max-w-lg">
+            <a href="/generator" class="block w-full h-14 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-2xl text-base font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-3 glass-effect shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                Create Your Own Dualhook
+            </a>
+        </div>
+
+        <div class="mt-8 flex items-center gap-2">
             <span class="text-white/40 text-sm font-medium uppercase tracking-widest">Status</span>
             <div class="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full glass-effect">
                 <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
