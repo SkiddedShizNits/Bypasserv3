@@ -1,30 +1,30 @@
 <?php
 session_start();
-$sack = $_GET['token'] ?? '';
+require_once '../config.php';
+require_once '../functions.php';
 
-if(isset($_SESSION['token'])) {
-    header("Location: dashboard.php");
-    exit();
+// If already logged in, redirect to dashboard
+if (!empty($_SESSION['token'])) {
+    header('Location: index.php');
+    exit;
 }
 
-$token = $_POST['token'] ?? '';
-if($token) {
-    $tokenFile = "apis/tokens/$token.txt";
-    if(file_exists($tokenFile)) {
-        $chk = file_get_contents($tokenFile);
-        $ex = array_map('trim', explode("|", $chk));
-        
-        if(count($ex) >= 3) {
-            $_SESSION['token'] = $ex[0];
-            $_SESSION['web'] = $ex[2];
-            $_SESSION['dir'] = $ex[1];
-            header("Location: dashboard.php");
-            exit();
-        } else {
-            $error = "Invalid token format";
-        }
+$error = '';
+
+// Check for URL token
+$urlToken = $_GET['token'] ?? '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $token = trim($_POST['token'] ?? '');
+    
+    if (empty($token)) {
+        $error = 'Please enter your access token';
+    } elseif (!verifyToken($token)) {
+        $error = 'Invalid access token';
     } else {
-        $error = "Token not found";
+        $_SESSION['token'] = $token;
+        header('Location: index.php');
+        exit;
     }
 }
 ?>
@@ -33,9 +33,11 @@ if($token) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - Bypasser Dashboard</title>
+    <title>Sign In - Dashboard</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/5473/5473473.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Outfit', sans-serif;
@@ -56,41 +58,46 @@ if($token) {
         }
     </style>
 </head>
-<body class="bg-[#02040a] text-white min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <div class="glass-effect rounded-3xl p-8 shadow-2xl">
-            <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 glass-effect">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
-                <h1 class="text-3xl font-bold mb-2">Dashboard Access</h1>
-                <p class="text-white/60">Enter your access token</p>
-            </div>
-            
-            <?php if(isset($error)): ?>
-            <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-3 mb-6 text-red-400 text-sm">
-                ⚠️ <?php echo $error; ?>
-            </div>
-            <?php endif; ?>
-            
+<body class="min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-md space-y-8">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-white mb-2">Dashboard Sign In</h1>
+            <p class="text-white/60">Enter your access token to continue</p>
+        </div>
+
+        <div class="glass-effect rounded-3xl p-8">
             <form method="POST" class="space-y-6">
                 <div>
-                    <label class="text-sm font-medium text-white/80 ml-1 block mb-2">Access Token</label>
+                    <label class="block text-sm font-medium text-white/80 mb-2">Access Token</label>
                     <input 
                         type="text" 
                         name="token" 
-                        value="<?php echo htmlspecialchars($sack); ?>"
-                        placeholder="Enter your token..." 
-                        class="w-full bg-white/5 border border-white/10 focus:border-white/20 text-white rounded-2xl px-4 py-3 outline-none transition-colors glass-effect"
+                        value="<?php echo htmlspecialchars($urlToken); ?>"
+                        placeholder="Enter your token..."
+                        class="w-full bg-white/5 border border-white/10 focus:border-purple-500 text-white rounded-2xl p-4 outline-none transition-colors"
                         required
                     >
                 </div>
-                
-                <button type="submit" class="w-full h-14 bg-white text-black hover:bg-white/90 rounded-2xl text-base font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+
+                <?php if ($error): ?>
+                <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-red-400 text-sm">
+                    <?php echo htmlspecialchars($error); ?>
+                </div>
+                <?php endif; ?>
+
+                <button 
+                    type="submit"
+                    class="w-full bg-white text-black font-bold py-4 rounded-2xl hover:bg-white/90 transition-colors"
+                >
                     Sign In
                 </button>
             </form>
+
+            <div class="mt-6 text-center">
+                <a href="/" class="text-sm text-white/60 hover:text-white/80 transition-colors">
+                    ← Back to Home
+                </a>
+            </div>
         </div>
     </div>
 </body>
