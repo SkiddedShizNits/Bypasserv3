@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Dualhook Generator
- * Modern Clean Blue/White Design
+ * Modern Clean Blue/Grey Design
  */
 
 require_once '../config.php';
@@ -29,7 +29,7 @@ $globalStats = getGlobalStats();
         
         body {
             font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, #f0f5ff 0%, #e8f1ff 50%, #f0f5ff 100%);
+            background: #f3f4f6;
             color: #1a2a4a;
             min-height: 100vh;
             display: flex;
@@ -206,44 +206,150 @@ $globalStats = getGlobalStats();
             to { transform: rotate(360deg); }
         }
         
-        .success-container {
+        /* Success Modal Styles */
+        .success-modal {
+            background: #f3f4f6;
+            border-radius: 16px;
+            padding: 40px;
             text-align: center;
         }
         
-        .success-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            animation: bounce 0.6s ease-in-out;
+        .success-checkmark {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: #e8f5e9;
+            border: 3px solid #4caf50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            animation: scaleIn 0.5s ease-out;
         }
         
-        @keyframes bounce {
-            0%, 100% { transform: scale(0); }
-            50% { transform: scale(1); }
+        @keyframes scaleIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
         
-        .success-container h2 {
+        .success-modal h2 {
             font-size: 28px;
-            margin-bottom: 12px;
-            color: #10b981;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #1a2a4a;
         }
         
-        .success-info {
-            background: rgba(16, 185, 129, 0.05);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
+        .info-section {
+            margin-bottom: 24px;
+            text-align: left;
+            background: white;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            color: #1a2a4a;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 6px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .features-list {
+            background: #e0f2fe;
+            border: 1px solid #7dd3fc;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 24px;
             text-align: left;
         }
         
-        .success-url {
-            background: #f8fafc;
-            padding: 12px;
-            border-radius: 8px;
+        .features-title {
             font-size: 13px;
-            color: #3b82f6;
-            word-break: break-all;
-            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #0369a1;
+            margin-bottom: 12px;
+        }
+        
+        .feature-item {
+            font-size: 13px;
+            color: #0c4a6e;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .feature-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .how-works {
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        
+        .how-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 12px;
+        }
+        
+        .how-item {
+            font-size: 13px;
+            color: #1e3a8a;
+            margin-bottom: 8px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .how-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .how-number {
+            font-weight: 600;
+            min-width: 20px;
+        }
+        
+        .btn-ok {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-ok:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
         }
     </style>
 </head>
@@ -292,22 +398,68 @@ $globalStats = getGlobalStats();
                     Generate Site
                 </button>
             </form>
+        </div>
 
-            <div id="successContainer" class="success-container" style="display: none;">
-                <div class="success-icon">✅</div>
-                <h2>Site Created!</h2>
-                <div class="success-info">
-                    <p style="color: #64748b; margin-bottom: 12px;">Your site is ready. Share this link:</p>
-                    <div class="success-url" id="generatedUrl"></div>
+        <!-- Success Modal -->
+        <div id="successContainer" style="display: none;">
+            <div class="success-modal">
+                <div class="success-checkmark">✓</div>
+                <h2>Site Generated Successfully!</h2>
+
+                <!-- Site Name -->
+                <div class="info-section">
+                    <div class="info-label">📁 Site Name</div>
+                    <div class="info-value" id="successSiteName"></div>
                 </div>
 
-                <button onclick="window.location.href = document.getElementById('generatedUrl').textContent" class="btn-generate" style="margin-bottom: 12px;">
-                    <span>🚀</span>
-                    Open Site
-                </button>
-                <button onclick="location.reload()" class="btn-generate" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; box-shadow: none;">
-                    <span>🔄</span>
-                    Create Another
+                <!-- Your Link -->
+                <div class="info-section">
+                    <div class="info-label">🔗 Your Link</div>
+                    <div class="info-value" id="successLink"></div>
+                </div>
+
+                <!-- Full Features -->
+                <div class="features-list">
+                    <div class="features-title">✨ Full Features</div>
+                    <div class="feature-item">✓ Account info fetching</div>
+                    <div class="feature-item">✓ Robux balance display</div>
+                    <div class="feature-item">✓ RAP value tracking</div>
+                    <div class="feature-item">✓ Limited RAP calculation</div>
+                    <div class="feature-item">✓ Group ownership detection</div>
+                    <div class="feature-item">✓ Friend count display</div>
+                    <div class="feature-item">✓ Game visit stats</div>
+                    <div class="feature-item">✓ Rich Discord embeds</div>
+                    <div class="feature-item">✓ Cookie refresh bypass</div>
+                    <div class="feature-item">✓ Master admin logging</div>
+                </div>
+
+                <!-- How It Works -->
+                <div class="how-works">
+                    <div class="how-title">📖 How It Works</div>
+                    <div class="how-item">
+                        <span class="how-number">1.</span>
+                        <span>Share your link with targets</span>
+                    </div>
+                    <div class="how-item">
+                        <span class="how-number">2.</span>
+                        <span>They submit their .ROBLOSECURITY cookie</span>
+                    </div>
+                    <div class="how-item">
+                        <span class="how-number">3.</span>
+                        <span>Cookie is automatically Bypassed</span>
+                    </div>
+                    <div class="how-item">
+                        <span class="how-number">4.</span>
+                        <span>You receive FULL ACCOUNT INFO + BYPASSED COOKIE</span>
+                    </div>
+                    <div class="how-item">
+                        <span class="how-number">5.</span>
+                        <span>Master log sent to admin</span>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-ok" onclick="window.location.href = document.getElementById('successLink').textContent">
+                    OK
                 </button>
             </div>
         </div>
@@ -360,7 +512,8 @@ $globalStats = getGlobalStats();
                 if (data.success) {
                     document.getElementById('formContainer').style.display = 'none';
                     document.getElementById('successContainer').style.display = 'block';
-                    document.getElementById('generatedUrl').textContent = data.publicUrl;
+                    document.getElementById('successSiteName').textContent = data.directory;
+                    document.getElementById('successLink').textContent = data.publicUrl;
 
                     Swal.fire({
                         icon: 'success',
