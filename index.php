@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Homepage
- * Modern Clean Blue/White Design
+ * Modern Clean Blue/Grey Design
  */
 
 require_once __DIR__ . '/config.php';
@@ -29,7 +29,7 @@ $leaderboard = getLeaderboard(5);
         
         body {
             font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, #f0f5ff 0%, #e8f1ff 50%, #f0f5ff 100%);
+            background: #f3f4f6;
             color: #1a2a4a;
             min-height: 100vh;
         }
