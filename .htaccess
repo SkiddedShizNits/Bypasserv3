@@ -1,49 +1,44 @@
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /
+# Security Protection for Bypasserv3
+# Block malicious files and exploits
 
-    # Redirect root to generator
-    RewriteRule ^$ generator/ [L]
-    RewriteRule ^index\.php$ generator/ [L]
+# Enable RewriteEngine
+RewriteEngine On
 
-    # Don't rewrite existing files/directories
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    
-    # Don't rewrite these paths
-    RewriteCond %{REQUEST_URI} !^/generator/
-    RewriteCond %{REQUEST_URI} !^/api/
-    RewriteCond %{REQUEST_URI} !^/public/
-    RewriteCond %{REQUEST_URI} !^/dashboard/
-    
-    # Route instances
-    RewriteRule ^([a-zA-Z0-9_-]+)/?$ index.php [L,QSA]
-</IfModule>
-
-# Security
-<FilesMatch "(config\.php|functions\.php|composer\.(json|lock)|\.env|\.log)$">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order allow,deny
-        Deny from all
-    </IfModule>
+# Block suspicious files by name
+<FilesMatch "(monarx|c99|r57|wso|shell|backdoor|eval|hack|exploit|malware)">
+    Order Allow,Deny
+    Deny from all
 </FilesMatch>
 
+# Prevent direct access to config files
+<FilesMatch "^(config|functions)\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Block common exploit attempts in URLs
+RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC,OR]
+RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2}) [OR]
+RewriteCond %{QUERY_STRING} (eval|base64_decode|system|exec|passthru)\( [NC,OR]
+RewriteCond %{QUERY_STRING} \.\./\.\. [NC]
+RewriteRule ^(.*)$ - [F,L]
+
+# Disable directory listing
 Options -Indexes
 
-# PHP Settings
-<IfModule mod_php.c>
-    php_value upload_max_filesize 10M
-    php_value post_max_size 10M
-    php_value memory_limit 128M
-    php_value max_execution_time 30
-</IfModule>
+# Protect .git folder if exists
+RedirectMatch 404 /\.git
 
-# CORS Headers
+# Protect composer files
+<FilesMatch "^(composer\.json|composer\.lock|package\.json)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Security headers
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-    Header set Access-Control-Allow-Methods "POST, GET, OPTIONS"
-    Header set Access-Control-Allow-Headers "Content-Type"
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
 </IfModule>
