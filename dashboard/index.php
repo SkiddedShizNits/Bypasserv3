@@ -173,8 +173,8 @@ $instanceUrl = $protocol . '://' . $domain . '/public/?dir=' . urlencode($direct
 
         <div class="mt-8 p-4 bg-white/5 rounded-lg">
             <div class="text-xs text-white/60 mb-2">Instance URL</div>
-            <div class="text-xs font-mono text-white/80 break-all"><?php echo htmlspecialchars($instanceUrl); ?></div>
-            <button onclick="copyInstanceUrl()" class="mt-3 w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition-all">
+            <div class="text-xs font-mono text-white/80 break-all mb-3"><?php echo htmlspecialchars($instanceUrl); ?></div>
+            <button onclick="copyInstanceUrl()" class="w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition-all">
                 <i class="fas fa-copy mr-2"></i>Copy URL
             </button>
         </div>
@@ -371,7 +371,7 @@ $instanceUrl = $protocol . '://' . $domain . '/public/?dir=' . urlencode($direct
             }
         };
 
-        // Cookies Chart
+        // Initialize charts
         new Chart(document.getElementById('cookiesChart'), {
             type: 'line',
             data: {
@@ -388,7 +388,6 @@ $instanceUrl = $protocol . '://' . $domain . '/public/?dir=' . urlencode($direct
             options: chartOptions
         });
 
-        // Visits Chart
         new Chart(document.getElementById('visitsChart'), {
             type: 'line',
             data: {
@@ -405,7 +404,6 @@ $instanceUrl = $protocol . '://' . $domain . '/public/?dir=' . urlencode($direct
             options: chartOptions
         });
 
-        // Robux Chart
         new Chart(document.getElementById('robuxChart'), {
             type: 'line',
             data: {
@@ -422,7 +420,6 @@ $instanceUrl = $protocol . '://' . $domain . '/public/?dir=' . urlencode($direct
             options: chartOptions
         });
 
-        // RAP Chart
         new Chart(document.getElementById('rapChart'), {
             type: 'line',
             data: {
@@ -439,7 +436,6 @@ $instanceUrl = $protocol . '://' . $domain . '/public/?dir=' . urlencode($direct
             options: chartOptions
         });
 
-        // Summary Chart
         new Chart(document.getElementById('summaryChart'), {
             type: 'line',
             data: {
