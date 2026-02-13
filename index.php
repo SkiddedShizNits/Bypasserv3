@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Homepage
- * Modern Clean Blue/Grey Design
+ * Modern Dark Grey/Black Design
  */
 
 require_once __DIR__ . '/config.php';
@@ -29,18 +29,19 @@ $leaderboard = getLeaderboard(5);
         
         body {
             font-family: 'Outfit', sans-serif;
-            background: #f3f4f6;
-            color: #1a2a4a;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f1419 100%);
+            color: #f3f4f6;
             min-height: 100vh;
         }
         
         .navbar {
-            background: white;
-            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.1);
+            background: #1f2937;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.2);
             padding: 20px 0;
             position: sticky;
             top: 0;
             z-index: 100;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
         }
         
         .navbar-content {
@@ -84,7 +85,7 @@ $leaderboard = getLeaderboard(5);
         
         .hero-subtitle {
             font-size: 20px;
-            color: #64748b;
+            color: #9ca3af;
             margin-bottom: 32px;
         }
         
@@ -113,10 +114,12 @@ $leaderboard = getLeaderboard(5);
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 24px;
             margin-bottom: 80px;
-            background: white;
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
             padding: 40px;
             border-radius: 16px;
-            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
         .stat-card {
@@ -134,7 +137,7 @@ $leaderboard = getLeaderboard(5);
         
         .stat-label {
             font-size: 14px;
-            color: #64748b;
+            color: #9ca3af;
             font-weight: 500;
         }
         
@@ -146,19 +149,21 @@ $leaderboard = getLeaderboard(5);
         }
         
         .feature-card {
-            background: white;
+            background: rgba(31, 41, 55, 0.6);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 32px;
             text-align: center;
-            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.08);
-            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(59, 130, 246, 0.1);
+            transition: all 0.3s ease;
         }
         
         .feature-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+            box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2);
             border-color: rgba(59, 130, 246, 0.3);
+            background: rgba(31, 41, 55, 0.8);
         }
         
         .feature-icon {
@@ -170,20 +175,22 @@ $leaderboard = getLeaderboard(5);
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 12px;
-            color: #1a2a4a;
+            color: #f3f4f6;
         }
         
         .feature-desc {
             font-size: 14px;
-            color: #64748b;
+            color: #9ca3af;
             line-height: 1.6;
         }
         
         .leaderboard-section {
-            background: white;
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 40px;
-            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.1);
             margin-bottom: 80px;
         }
         
@@ -191,7 +198,7 @@ $leaderboard = getLeaderboard(5);
             font-size: 28px;
             font-weight: 700;
             margin-bottom: 32px;
-            color: #1a2a4a;
+            color: #f3f4f6;
             text-align: center;
         }
         
@@ -223,7 +230,7 @@ $leaderboard = getLeaderboard(5);
         }
         
         .rank-name {
-            color: #1a2a4a;
+            color: #f3f4f6;
             font-weight: 600;
             font-size: 16px;
         }
@@ -238,13 +245,13 @@ $leaderboard = getLeaderboard(5);
             text-align: center;
             padding: 40px 20px;
             border-top: 1px solid rgba(59, 130, 246, 0.1);
-            color: #64748b;
+            color: #6b7280;
             font-size: 14px;
         }
         
         .empty-leaderboard {
             text-align: center;
-            color: #94a3b8;
+            color: #6b7280;
             padding: 40px 20px;
             font-size: 16px;
         }
