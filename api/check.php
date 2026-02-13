@@ -69,4 +69,4 @@ echo json_encode([
     'userId' => $userId,
     'username' => $username
 ]);
-?> 
+?>
