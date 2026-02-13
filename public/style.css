@@ -1,4 +1,4 @@
-/* Bypasserv3 - Public Styles */
+/* Bypasserv3 - Public Styles - UPDATED */
 
 .glass-effect {
     backdrop-filter: blur(10px) saturate(180%);
@@ -57,6 +57,10 @@
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
 }
 
+.font-display {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
 ::-webkit-scrollbar {
     width: 10px;
 }
@@ -72,4 +76,18 @@
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(59, 130, 246, 0.7);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top-width: 2px;
+    }
+    
+    .animated-gradient-text {
+        font-size: 1.875rem;
+    }
 }
