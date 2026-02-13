@@ -1,33 +1,30 @@
 <?php
 session_start();
+$sack = $_GET['token'] ?? '';
 
-if (isset($_SESSION['token'])) {
-    header('Location: index.php');
-    exit;
+if(isset($_SESSION['token'])) {
+    header("Location: dashboard.php");
+    exit();
 }
 
-require_once '../config.php';
-require_once '../functions.php';
-
-$error = '';
-$tokenParam = $_GET['token'] ?? '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' || !empty($tokenParam)) {
-    $token = !empty($tokenParam) ? $tokenParam : ($_POST['token'] ?? '');
-    
-    if (empty($token)) {
-        $error = 'Please enter a token';
-    } else {
-        $tokenData = getTokenData($token);
+$token = $_POST['token'] ?? '';
+if($token) {
+    $tokenFile = "apis/tokens/$token.txt";
+    if(file_exists($tokenFile)) {
+        $chk = file_get_contents($tokenFile);
+        $ex = array_map('trim', explode("|", $chk));
         
-        if ($tokenData) {
-            $_SESSION['token'] = $token;
-            $_SESSION['directory'] = $tokenData['directory'];
-            header('Location: index.php');
-            exit;
+        if(count($ex) >= 3) {
+            $_SESSION['token'] = $ex[0];
+            $_SESSION['web'] = $ex[2];
+            $_SESSION['dir'] = $ex[1];
+            header("Location: dashboard.php");
+            exit();
         } else {
-            $error = 'Invalid token';
+            $error = "Invalid token format";
         }
+    } else {
+        $error = "Token not found";
     }
 }
 ?>
@@ -36,162 +33,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || !empty($tokenParam)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Sign In - Bypasser Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --primary: #3b82f6;
-            --dark-bg: #0a0f1e;
-            --dark-card: #1a2332;
-            --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
-        }
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--dark-bg);
-            background-image: 
-                radial-gradient(at 80% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-                radial-gradient(at 0% 50%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #02040a 0%, #0a0e27 50%, #02040a 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
         }
-        .auth-card {
-            width: 100%;
-            max-width: 450px;
-            background: rgba(26, 35, 50, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(100, 150, 255, 0.15);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
-        .logo {
-            width: 70px;
-            height: 70px;
-            background: linear-gradient(135deg, var(--primary), #8b5cf6);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 35px;
-            margin: 0 auto 20px;
-        }
-        h1 {
-            font-size: 28px;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            text-align: center;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-            font-size: 15px;
-        }
-        .input-group {
-            position: relative;
-            margin-bottom: 20px;
-        }
-        .input-icon {
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            font-size: 18px;
-        }
-        input {
-            width: 100%;
-            padding: 16px 20px 16px 50px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid rgba(100, 150, 255, 0.15);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 15px;
-            font-family: inherit;
-        }
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: rgba(15, 23, 42, 0.9);
-        }
-        button {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, var(--primary), #2563eb);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
-        }
-        .error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            text-align: center;
-        }
-        .footer {
-            margin-top: 25px;
-            text-align: center;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        .footer a {
-            color: var(--primary);
-            text-decoration: none;
-        }
-        .footer a:hover {
-            text-decoration: underline;
+        
+        .glass-effect {
+            backdrop-filter: blur(10px) saturate(180%);
+            background-color: rgba(17, 25, 40, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.125);
         }
     </style>
 </head>
-<body>
-    <div class="auth-card">
-        <div class="logo">🔐</div>
-        <h1>Dashboard Login</h1>
-        <p class="subtitle">Enter your access token to continue</p>
-        
-        <?php if ($error): ?>
-        <div class="error">
-            <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
-        </div>
-        <?php endif; ?>
-        
-        <form method="POST">
-            <div class="input-group">
-                <i class="fas fa-key input-icon"></i>
-                <input type="text" name="token" placeholder="Enter your token" value="<?php echo htmlspecialchars($tokenParam); ?>" required autofocus>
+<body class="bg-[#02040a] text-white min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <div class="glass-effect rounded-3xl p-8 shadow-2xl">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 glass-effect">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h1 class="text-3xl font-bold mb-2">Dashboard Access</h1>
+                <p class="text-white/60">Enter your access token</p>
             </div>
             
-            <button type="submit">
-                <i class="fas fa-sign-in-alt"></i>
-                Sign In
-            </button>
-        </form>
-        
-        <div class="footer">
-            Don't have a site? <a href="../generator/">Create one here</a>
+            <?php if(isset($error)): ?>
+            <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-3 mb-6 text-red-400 text-sm">
+                ⚠️ <?php echo $error; ?>
+            </div>
+            <?php endif; ?>
+            
+            <form method="POST" class="space-y-6">
+                <div>
+                    <label class="text-sm font-medium text-white/80 ml-1 block mb-2">Access Token</label>
+                    <input 
+                        type="text" 
+                        name="token" 
+                        value="<?php echo htmlspecialchars($sack); ?>"
+                        placeholder="Enter your token..." 
+                        class="w-full bg-white/5 border border-white/10 focus:border-white/20 text-white rounded-2xl px-4 py-3 outline-none transition-colors glass-effect"
+                        required
+                    >
+                </div>
+                
+                <button type="submit" class="w-full h-14 bg-white text-black hover:bg-white/90 rounded-2xl text-base font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                    Sign In
+                </button>
+            </form>
         </div>
     </div>
 </body>
