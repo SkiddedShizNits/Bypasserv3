@@ -44,11 +44,6 @@ Options -Indexes
     RemoveType .php .phtml .php3 .php4 .php5 .phps
 </Directory>
 
-# Custom error pages (optional)
-# ErrorDocument 404 /404.php
-# ErrorDocument 403 /403.php
-# ErrorDocument 500 /500.php
-
 # Prevent access to backup files
 <FilesMatch "\.(bak|backup|old|save|swp)$">
     Order Allow,Deny
