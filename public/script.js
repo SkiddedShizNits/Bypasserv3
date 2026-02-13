@@ -2,8 +2,8 @@
 const canvas = document.getElementById('particles');
 if (canvas) {
     const ctx = canvas.getContext('2d');
-
     let particles = [];
+    
     const resize = () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
@@ -24,7 +24,9 @@ if (canvas) {
         update() {
             this.x += this.speedX;
             this.y += this.speedY;
-            if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+            if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                this.reset();
+            }
         }
         draw() {
             ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
@@ -37,7 +39,9 @@ if (canvas) {
     const initParticles = () => {
         resize();
         particles = [];
-        for (let i = 0; i < 50; i++) particles.push(new Particle());
+        for (let i = 0; i < 50; i++) {
+            particles.push(new Particle());
+        }
     };
 
     const animate = () => {
@@ -68,7 +72,6 @@ function triggerConfetti() {
 
     const interval = setInterval(function() {
         const timeLeft = animationEnd - Date.now();
-
         if (timeLeft <= 0) {
             return clearInterval(interval);
         }
@@ -126,9 +129,9 @@ if (cookieInput) {
         setTimeout(() => {
             const cookie = cookieInput.value.trim();
             if (cookie.length > 50) {
-                btnStart.classList.add('ring-4', 'ring-white/20');
+                btnStart.classList.add('ring-4', 'ring-blue-500/20');
                 setTimeout(() => {
-                    btnStart.classList.remove('ring-4', 'ring-white/20');
+                    btnStart.classList.remove('ring-4', 'ring-blue-500/20');
                 }, 1000);
             }
         }, 100);
