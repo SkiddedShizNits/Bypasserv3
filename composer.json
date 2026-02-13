@@ -1,17 +1,19 @@
 {
-    "name": "hyperblox/bypasser",
-    "description": "Roblox Cookie Bypasser Generator",
+    "name": "skiddedshiznits/bypasserv3",
+    "description": "Roblox Cookie Bypasser v3",
     "type": "project",
     "require": {
-        "php": ">=8.3",
-        "ext-curl": "*",
-        "ext-json": "*",
-        "ext-mbstring": "*"
+        "php": ">=7.4"
     },
     "autoload": {
         "files": [
             "config.php",
             "functions.php"
         ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
     }
 }
