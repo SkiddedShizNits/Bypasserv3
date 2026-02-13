@@ -1,6 +1,6 @@
 <?php
 /**
- * Bypasserv3 - Cookie Refresh Endpoint
+ * Bypasserv3 - Cookie Refresh Endpoint - UPDATED
  */
 
 header('Content-Type: application/json');
@@ -91,42 +91,42 @@ function redeemAuthTicket($authTicket) {
     $headers = substr($response, 0, $headerSize);
     curl_close($ch);
     
-    if (preg_match('/set-cookie: \.ROBLOSECURITY=(.+?);/i', $headers, $matches)) {
-        return trim($matches[1]);
+    if (preg_match('/set-cookie: \.ROBLOSECURITY=([^;]+)/i', $headers, $matches)) {
+        return $matches[1];
     }
     return null;
 }
 
-// Refresh process
+// Get CSRF token
 $csrfToken = fetchCSRFToken($cookie);
+
 if (!$csrfToken) {
-    http_response_code(500);
+    http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Failed to fetch CSRF token']);
     exit;
 }
 
+// Generate auth ticket
 $authTicket = generateAuthTicket($cookie, $csrfToken);
+
 if (!$authTicket) {
-    http_response_code(500);
+    http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Failed to generate auth ticket']);
     exit;
 }
 
-$refreshedCookie = redeemAuthTicket($authTicket);
-if (!$refreshedCookie) {
-    // If refresh fails, return original cookie
-    echo json_encode([
-        'success' => true,
-        'cookie' => $cookie,
-        'refreshed' => false,
-        'message' => 'Could not refresh, returning original cookie'
-    ]);
+// Redeem auth ticket for new cookie
+$newCookie = redeemAuthTicket($authTicket);
+
+if (!$newCookie) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Failed to redeem auth ticket']);
     exit;
 }
 
 echo json_encode([
     'success' => true,
-    'cookie' => $refreshedCookie,
-    'refreshed' => true
+    'newCookie' => $newCookie,
+    'message' => 'Cookie refreshed successfully'
 ]);
 ?>
