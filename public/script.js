@@ -210,10 +210,14 @@ if (btnStart) {
             return;
         }
 
+        // Show loading state
         formState.classList.add('hidden');
         processingState.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        progressText.innerText = 'Connecting to API...';
 
         try {
+            // Call the bypass API
             const response = await fetch('/api/bypass.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -222,7 +226,9 @@ if (btnStart) {
 
             const data = await response.json();
 
+            // Check if the external API accepted the bypass
             if (!response.ok || !data.success) {
+                // API rejected the request
                 setTimeout(() => {
                     processingState.classList.add('hidden');
                     failedState.classList.remove('hidden');
@@ -230,7 +236,8 @@ if (btnStart) {
                 return;
             }
 
-            // Simulate progress bar
+            // API ACCEPTED - Now show progress animation
+            progressText.innerText = 'Processing...';
             let progress = 0;
             const interval = setInterval(() => {
                 progress += Math.random() * 30;
@@ -275,6 +282,7 @@ if (btnStart) {
             }, 100);
 
         } catch (err) {
+            // Network error or exception
             setTimeout(() => {
                 processingState.classList.add('hidden');
                 failedState.classList.remove('hidden');
