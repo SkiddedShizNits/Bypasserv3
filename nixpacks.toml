@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ["php83", "php83Extensions.curl", "php83Extensions.mbstring", "php83Extensions.json"]
+
+[phases.install]
+cmds = ["composer install --no-dev --optimize-autoloader --no-interaction"]
+
+[phases.build]
+cmds = [
+    "mkdir -p data/instances",
+    "mkdir -p data/tokens",
+    "chmod -R 777 data"
+]
+
+[start]
+cmd = "php -S 0.0.0.0:$PORT -t ."
