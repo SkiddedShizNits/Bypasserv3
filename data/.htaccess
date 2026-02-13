@@ -1,0 +1,28 @@
+# Protect Data Directory
+# Prevent PHP execution and only allow JSON files
+
+# Block ALL PHP execution
+<FilesMatch "\.(php|php3|php4|php5|php7|phtml|phar|phps)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Only allow JSON and text files to be accessed
+<FilesMatch "\.(json|txt|log)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Disable directory listing
+Options -Indexes
+
+# Prevent access to hidden files
+<FilesMatch "^\.">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Disable script execution
+php_flag engine off
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7
+RemoveType .php .phtml .php3 .php4 .php5 .php7
