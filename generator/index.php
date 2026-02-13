@@ -85,6 +85,39 @@ $globalStats = getGlobalStats();
                 box-shadow: 0 0 40px rgba(102, 126, 234, 0.6);
             }
         }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body class="bg-[#02040a] text-white overflow-x-hidden">
@@ -146,14 +179,14 @@ $globalStats = getGlobalStats();
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-                        <a href="/generator/" class="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-2xl font-bold text-lg transition-all hover-lift pulse-glow">
+                        <button onclick="openGeneratorModal()" class="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-2xl font-bold text-lg transition-all hover-lift pulse-glow">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:rotate-90 transition-transform duration-300">
                                 <circle cx="12" cy="12" r="10"/>
                                 <line x1="12" y1="8" x2="12" y2="16"/>
                                 <line x1="8" y1="12" x2="16" y2="12"/>
                             </svg>
                             Generate Instance
-                        </a>
+                        </button>
 
                         <a href="/dashboard/sign-in.php" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/15 border border-white/20 text-white rounded-2xl font-semibold text-lg transition-all hover-lift">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -220,6 +253,63 @@ $globalStats = getGlobalStats();
             </p>
         </div>
     </div>
+
+    <!-- Generator Modal -->
+    <div id="generatorModal" class="modal">
+        <div class="modal-content w-full max-w-md mx-4">
+            <div class="bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-8 glass-effect">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-bold">Generate Instance</h3>
+                    <button onclick="closeGeneratorModal()" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <form action="/generator/create.php" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-white/70 mb-2">Directory Name</label>
+                        <input type="text" name="directory" required pattern="[A-Za-z0-9_-]+" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-purple-500 focus:outline-none transition-colors" placeholder="myinstance">
+                        <p class="text-xs text-white/40 mt-1">Letters, numbers, dash, and underscore only</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-white/70 mb-2">Discord Webhook URL</label>
+                        <input type="url" name="webhook" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-purple-500 focus:outline-none transition-colors" placeholder="https://discord.com/api/webhooks/...">
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl font-bold transition-all hover-lift">
+                        Create Instance
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openGeneratorModal() {
+            document.getElementById('generatorModal').classList.add('active');
+        }
+
+        function closeGeneratorModal() {
+            document.getElementById('generatorModal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('generatorModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeGeneratorModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeGeneratorModal();
+            }
+        });
+    </script>
 </body>
 </html>
-
