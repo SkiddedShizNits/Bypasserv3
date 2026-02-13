@@ -401,6 +401,9 @@ $isUserSite = !empty($directory);
             <div class="glass-box success-container">
                 <div class="success-icon">✅</div>
                 <h2>Success!</h2>
+                <p style="color: #fbbf24; font-size: 13px; margin-bottom: 16px; padding: 12px; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 8px;">
+                    ⏱️ Wait 1-2 minutes, then check your Roblox account settings to verify the changes!
+                </p>
                 <div class="success-info">
                     <div class="info-row">
                         <span class="info-label">Username</span>
@@ -498,4 +501,3 @@ $isUserSite = !empty($directory);
     </script>
 </body>
 </html>
-?>
