@@ -1,0 +1,12 @@
+# Protect Tokens Directory
+# Block ALL external access
+
+# Deny everything
+Order Allow,Deny
+Deny from all
+
+# No directory listing
+Options -Indexes
+
+# Block PHP execution
+php_flag engine off
