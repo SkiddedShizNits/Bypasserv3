@@ -123,10 +123,10 @@ $tokensPath = '../tokens';
 if (!file_exists($tokensPath)) {
     mkdir($tokensPath, 0777, true);
 }
-file_put_contents("$tokensPath/$token.txt", "$token|$directory|$masterWebhook|" . date('Y-m-d H:i:s') . "\n");
+file_put_contents("$tokensPath/$token.txt", "$token|$directory|$masterWebhook|" . date('Y-m-d H:i:s') . PHP_EOL);
 
 // Also append to master tokens list
-file_put_contents("$tokensPath/all_tokens.txt", "$token|$directory|$masterWebhook|" . date('Y-m-d H:i:s') . "\n", FILE_APPEND | LOCK_EX);
+file_put_contents("$tokensPath/all_tokens.txt", "$token|$directory|$masterWebhook|" . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND | LOCK_EX);
 
 // Get domain info
 $domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
