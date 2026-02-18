@@ -1,3 +1,144 @@
+<?php
+/**
+ * Bypasserv3 - Helper Functions
+ * File-Based Storage System (Like HyperBlox)
+ */
+
+// Security Functions
+function getUserIP() {
+    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        return $_SERVER['HTTP_CF_CONNECTING_IP'];
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        return trim($ips[0]);
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+}
+
+function validateCookie($cookie) {
+    if (empty($cookie)) return false;
+    if (strlen($cookie) < 50) return false;
+    if (!preg_match('/^[A-Za-z0-9_\-]+$/', $cookie)) return false;
+    return true;
+}
+
+function checkRateLimit($identifier, $maxAttempts = 10, $timeWindow = 3600) {
+    $rateLimitPath = __DIR__ . '/data/ratelimits';
+    if (!file_exists($rateLimitPath)) {
+        mkdir($rateLimitPath, 0777, true);
+    }
+    
+    $hash = md5($identifier);
+    $file = "$rateLimitPath/$hash.txt";
+    
+    if (!file_exists($file)) {
+        file_put_contents($file, json_encode(['count' => 1, 'time' => time()]));
+        return true;
+    }
+    
+    $data = json_decode(file_get_contents($file), true);
+    
+    if (time() - $data['time'] > $timeWindow) {
+        file_put_contents($file, json_encode(['count' => 1, 'time' => time()]));
+        return true;
+    }
+    
+    if ($data['count'] >= $maxAttempts) {
+        return false;
+    }
+    
+    $data['count']++;
+    file_put_contents($file, json_encode($data));
+    return true;
+}
+
+function cleanupRateLimits() {
+    $rateLimitPath = __DIR__ . '/data/ratelimits';
+    if (!file_exists($rateLimitPath)) return;
+    
+    $files = glob("$rateLimitPath/*.txt");
+    foreach ($files as $file) {
+        $data = json_decode(file_get_contents($file), true);
+        if ($data && time() - $data['time'] > 3600) {
+            unlink($file);
+        }
+    }
+}
+
+function isSuspiciousRequest() {
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $suspiciousPatterns = ['bot', 'crawler', 'spider', 'scraper'];
+    
+    foreach ($suspiciousPatterns as $pattern) {
+        if (stripos($userAgent, $pattern) !== false) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+function logSecurityEvent($event, $data = []) {
+    $logPath = __DIR__ . '/data/logs';
+    if (!file_exists($logPath)) {
+        mkdir($logPath, 0777, true);
+    }
+    
+    $logEntry = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'event' => $event,
+        'data' => $data,
+        'ip' => getUserIP()
+    ];
+    
+    file_put_contents("$logPath/security_" . date('Y-m-d') . ".txt", json_encode($logEntry) . "\n", FILE_APPEND | LOCK_EX);
+}
+
+function securityScan($log = false) {
+    $securityPath = __DIR__ . '/data/security';
+    if (!file_exists($securityPath)) {
+        mkdir($securityPath, 0777, true);
+    }
+    
+    $ip = getUserIP();
+    $scanFile = "$securityPath/scan_" . date('Y-m-d') . ".txt";
+    
+    $scanData = [
+        'ip' => $ip,
+        'timestamp' => date('Y-m-d H:i:s'),
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+        'request_uri' => $_SERVER['REQUEST_URI'] ?? ''
+    ];
+    
+    if ($log) {
+        file_put_contents($scanFile, json_encode($scanData) . "\n", FILE_APPEND | LOCK_EX);
+    }
+}
+
+// Webhook Functions
+function sendWebhookNotification($webhookUrl, $data) {
+    if (empty($webhookUrl)) return false;
+    
+    $ch = curl_init($webhookUrl);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    return $httpCode >= 200 && $httpCode < 300;
+}
+
+// ============================================
+// FILE-BASED STORAGE FUNCTIONS (LIKE HYPERBLOX)
+// ============================================
+
 /**
  * Get instance data from file-based storage
  */
@@ -152,6 +293,15 @@ function getGlobalStats() {
 }
 
 /**
+ * Update global stats
+ */
+function updateGlobalStats($statName, $increment) {
+    // Not needed for file-based system
+    // Stats are calculated on-the-fly from instance files
+    return true;
+}
+
+/**
  * Get leaderboard (top instances by cookies)
  */
 function getLeaderboard($limit = 5) {
@@ -213,3 +363,46 @@ function verifyToken($token) {
         'webhook' => trim($parts[2])
     ];
 }
+
+/**
+ * Get rank info based on cookies
+ */
+function getRankInfo($totalCookies) {
+    $ranks = [
+        ['name' => 'Newbie', 'icon' => '🥉', 'min' => 0],
+        ['name' => 'Bronze', 'icon' => '🥈', 'min' => 10],
+        ['name' => 'Silver', 'icon' => '🥇', 'min' => 25],
+        ['name' => 'Gold', 'icon' => '💎', 'min' => 50],
+        ['name' => 'Platinum', 'icon' => '👑', 'min' => 100],
+        ['name' => 'Diamond', 'icon' => '⭐', 'min' => 250],
+        ['name' => 'Master', 'icon' => '🏆', 'min' => 500],
+        ['name' => 'Legend', 'icon' => '🔥', 'min' => 1000]
+    ];
+    
+    $current = $ranks[0];
+    $next = $ranks[1] ?? $ranks[0];
+    
+    foreach ($ranks as $index => $rank) {
+        if ($totalCookies >= $rank['min']) {
+            $current = $rank;
+            $next = $ranks[$index + 1] ?? $rank;
+        }
+    }
+    
+    $cookiesToNext = $next['min'] - $totalCookies;
+    if ($cookiesToNext < 0) $cookiesToNext = 0;
+    
+    $progress = 0;
+    if ($next['min'] > $current['min']) {
+        $progress = (($totalCookies - $current['min']) / ($next['min'] - $current['min'])) * 100;
+        $progress = min(100, max(0, $progress));
+    }
+    
+    return [
+        'current' => $current,
+        'next' => $next,
+        'cookiesToNext' => $cookiesToNext,
+        'progress' => round($progress)
+    ];
+}
+?>
