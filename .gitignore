@@ -1,0 +1,100 @@
+# ============================================
+# ENVIRONMENT FILES (CONTAINS SECRETS!)
+# ============================================
+.env
+.env.local
+.env.production
+.env.*.local
+
+# ============================================
+# INSTANCE DATA (USER DATA)
+# ============================================
+/instances/*
+!/instances/.gitkeep
+
+# ============================================
+# TOKENS (SENSITIVE AUTH DATA)
+# ============================================
+/tokens/*
+!/tokens/.gitkeep
+
+# ============================================
+# DATA & LOGS
+# ============================================
+/data/*
+!/data/.gitkeep
+/logs/*
+!/logs/.gitkeep
+
+# ============================================
+# SYSTEM FILES
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# ============================================
+# IDE FILES
+# ============================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+.project
+.classpath
+.settings/
+nbproject/
+
+# ============================================
+# PHP COMPOSER
+# ============================================
+/vendor/
+composer.phar
+composer.lock
+
+# ============================================
+# NODE MODULES (IF USING)
+# ============================================
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# ============================================
+# CACHE & TEMP FILES
+# ============================================
+*.cache
+cache/
+temp/
+tmp/
+.phpunit.result.cache
+
+# ============================================
+# OS SPECIFIC
+# ============================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+.Trash-*
