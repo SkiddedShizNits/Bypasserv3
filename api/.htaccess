@@ -1,4 +1,6 @@
-# Protect API Directory
+# ============================================
+# PROTECT API DIRECTORY
+# ============================================
 
 # Disable directory listing
 Options -Indexes
