@@ -828,7 +828,7 @@ $publicUrl = "$protocol://$domain/public/?dir=" . urlencode($directory);
                                         <img src="<?php echo htmlspecialchars($user['profilePicture']); ?>" alt="Avatar" class="leaderboard-avatar">
                                         <div class="leaderboard-details">
                                             <div class="leaderboard-name"><?php echo htmlspecialchars($user['username']); ?></div>
-                                            <div class="leaderboard-stats"><?php echo number_format($user['totalCookies']); ?> cookies • <?php echo number_format($user['totalVisits']); ?> visits</div>
+                                            <div class="leaderboard-stats"><?php echo number_format($user['stats']['totalCookies']); ?> cookies • <?php echo number_format($user['stats']['totalVisits']); ?> visits</div>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
