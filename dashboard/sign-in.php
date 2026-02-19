@@ -16,8 +16,8 @@ $token = $_GET['token'] ?? $_POST['token'] ?? '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($token)) {
     $token = trim($token);
     
-    // Look for token file
-    $tokenFile = "../tokens/$token.txt";
+    // Look for token file using TOKENS_DIR constant
+    $tokenFile = TOKENS_DIR . "/$token.txt";
     
     if (file_exists($tokenFile)) {
         $tokenData = file_get_contents($tokenFile);
