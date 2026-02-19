@@ -1,9 +1,4 @@
 <?php
-/**
- * Bypasserv3 - Instance Creator
- * MASTER_WEBHOOK is COMPLETELY HIDDEN from users
- * Users only provide their webhook (required)
- */
 
 header('Content-Type: application/json');
 
